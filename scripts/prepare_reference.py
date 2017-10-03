@@ -8,6 +8,7 @@ def usage():
     if len(sys.argv) != 3:
         print('usage: ', os.path.basename(__file__), ' [reference directory] [simulation directory]') 
         sys.exit(1)
+    return
 
 def main():
     usage()
@@ -178,6 +179,7 @@ def main():
     print('    - total length of transcripts: {:>10d}'.format(total_transcript_length)) 
     transcript_in.close()
     transcript_out.close()
+    return
 
 if __name__ == '__main__':
     main()
