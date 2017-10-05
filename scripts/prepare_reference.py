@@ -5,8 +5,8 @@ import re
 import sys
 
 def usage():
-    if len(sys.argv) != 3:
-        print('usage: ', os.path.basename(__file__), ' [reference directory] [simulation directory]') 
+    if len(sys.argv) != 4:
+        print('usage: ', os.path.basename(__file__), ' [reference directory] [simulation directory] [length threshold]') 
         sys.exit(1)
     return
 
@@ -20,27 +20,33 @@ def main():
     mRNA_pool = set()
     mRNA_parent = dict()
 
-    total_transcript_length = 0
-
     refdir = os.path.abspath(sys.argv[1])
     outdir = os.path.abspath(sys.argv[2])
+
+    shortest_length = int(sys.argv[3])
 
     if not os.path.exists(outdir + '/chromosome'):
         os.makedirs(outdir + '/chromosome')
 
     print('load transcriptome.fasta')
+    transcript_length = 0
+    total_transcript_length = 0
     with open(refdir + '/transcriptome.fasta', 'r') as transcript_file:
-        for transcript_line in transcript_file:
+        for i, transcript_line in enumerate(transcript_file):
             if transcript_line[0] == '>':
+                if i != 0 and transcript_length >= shortest_length:
+                    transcript_pool.add(transcript_name)
+
+                transcript_length = 0
                 regex = re.match('>(\S+)', transcript_line)
                 transcript_name = regex.group(1)
                 regex = re.match('(\S+)\.', transcript_name)
                 if regex:
                     transcript_name = regex.group(1)
-                transcript_pool.add(transcript_name)
             else:
+                transcript_length += len(transcript_line.rstrip())
                 total_transcript_length += len(transcript_line.rstrip())
-        transcript_file.close()
+        
     print('    - number of transcripts: {:>16d}'.format(len(transcript_pool)))
     print('    - total length of transcripts: {:>10d}'.format(total_transcript_length))
 
