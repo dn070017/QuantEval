@@ -6,7 +6,7 @@ import sys
 
 def usage():
     if len(sys.argv) != 4:
-        print('usage: ', os.path.basename(__file__), ' [reference directory] [simulation directory] [length threshold]') 
+        print('usage: ', os.path.basename(__file__), ' [reference directory] [length threshold]') 
         sys.exit(1)
     return
 
@@ -21,12 +21,11 @@ def main():
     mRNA_parent = dict()
 
     refdir = os.path.abspath(sys.argv[1])
-    outdir = os.path.abspath(sys.argv[2])
 
-    shortest_length = int(sys.argv[3])
+    shortest_length = int(sys.argv[2])
 
-    if not os.path.exists(outdir + '/chromosome'):
-        os.makedirs(outdir + '/chromosome')
+    if not os.path.exists(refdir + '/chromosome'):
+        os.makedirs(refdir + '/chromosome')
 
     print('load transcriptome.fasta')
     transcript_length = 0
@@ -96,7 +95,7 @@ def main():
     mRNA_count = 0
     total_transcript_length = 0
     annotation_out = open(refdir + '/mRNA.gtf', 'w')
-    flux_annotation_out = open(outdir + '/flux_simulator.gtf', 'w')
+    flux_annotation_out = open(refdir + '/flux_simulator.gtf', 'w')
     for annotation_data in annotation_pool:
         category = annotation_data[2]
         attributes = annotation_data[8]
@@ -153,7 +152,7 @@ def main():
             if genome_name in chromosome_pool:
                 chromosome_count += 1
                 retain_chromosome = True
-                chromosome_out = open(outdir + '/chromosome/' + genome_name + '.fa', 'w')
+                chromosome_out = open(refdir + '/chromosome/' + genome_name + '.fa', 'w')
             else:
                 retain_chromosome = False        
         if retain_chromosome:
