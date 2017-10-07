@@ -5,7 +5,7 @@ import re
 import sys
 
 def usage():
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 3:
         print('usage: ', os.path.basename(__file__), ' [reference directory] [length threshold]') 
         sys.exit(1)
     return
