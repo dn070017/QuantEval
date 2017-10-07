@@ -62,7 +62,10 @@ def main():
             chromosome = annotation_data[0]
             category = annotation_data[2]
             attributes = annotation_data[8]
-            
+           
+            if chromosome in ['MT', 'Mito']:
+                continue
+
             if category not in ['gene', 'mRNA', 'exon']:
                 continue
 
