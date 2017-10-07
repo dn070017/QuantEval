@@ -1,7 +1,6 @@
 # File Locations
 REF_FILE_NAME flux_simulator_clean.gtf
 GEN_DIR chromosome
-TMP_DIR ../../temp
 
 # Expression
 NB_MOLECULES 5000000
