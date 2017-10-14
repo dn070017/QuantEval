@@ -18,7 +18,7 @@ do
 
     for DEPTH in "${DEPTHS[@]}"
     do
-        for SEQ in 'mRNA'
+        for SEQ in 'mRNA' 'rnaspades' 'trinity' 'transabyss'
         do
             SEQDIR=$BASEDIR/simulation/${SPECIES}_${DEPTH}/$SEQ
             MRNADIR=$BASEDIR/simulation/${SPECIES}_${DEPTH}/mRNA
