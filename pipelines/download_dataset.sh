@@ -5,6 +5,7 @@ set -e
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$SCRIPTDIR/../reference"
 BASEDIR="$SCRIPTDIR/../reference"
+REALDIR="$SCRIPTDIR/../real/"
 
 mkdir -p "$BASEDIR/dog/"
 cd "$BASEDIR/dog/"
@@ -26,3 +27,23 @@ wget ftp://ftp.ensembl.org/pub/release-90/fasta/saccharomyces_cerevisiae/dna/Sac
 wget ftp://ftp.ensembl.org/pub/release-90/fasta/saccharomyces_cerevisiae/cdna/Saccharomyces_cerevisiae.R64-1-1.cdna.all.fa.gz -O transcriptome.fasta.gz
 wget ftp://ftp.ensembl.org/pub/release-90/gff3/saccharomyces_cerevisiae/Saccharomyces_cerevisiae.R64-1-1.90.gff3.gz -O annotation.gff.gz
 gzip -d *
+
+mkdir -p "$REALDIR/dog/reads"
+cd "$REALDIR/dog/reads"
+fastq-dump --split-files SRR882109
+ln SRR882109_1.fastq raw_r1.fastq 
+ln SRR882109_2.fastq raw_r2.fastq
+
+mkdir -p "$REALDIR/mouse/reads"
+cd "$REALDIR/mouse/reads"
+fastq-dump --split-files SRR203276
+ln SRR203276_1.fastq raw_r1.fastq
+ln SRR203276_2.fastq raw_r2.fastq
+
+mkdir -p "$REALDIR/yeast/reads"
+cd "$REALDIR/yeast/reads"
+fastq-dump --split-files SRR453566
+ln SRR453566_1.fastq raw_r1.fastq
+ln SRR453566_2.fastq raw_r2.fastq
+
+
