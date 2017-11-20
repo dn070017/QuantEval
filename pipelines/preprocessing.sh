@@ -18,7 +18,7 @@ do
     fi
     
     #for SPECIES in 'mouse' 'dog' 'yeast'
-    for SPECIES in 'yeast'
+    for SPECIES in 'mouse' 'dog'
     do
         if [ $TYPE == 'simulation' ] && [ $SPECIES == 'mouse' ]
         then
@@ -41,7 +41,7 @@ do
             fastqc -t $THREADS -f fastq -o $READDIR/fastqc --nogroup $READDIR/read_*.fastq
 
             REFDIR=$BASEDIR/reference/$SPECIES
-            MRNADIR=$BASEDIR/simulation/$SPECIES/mRNA
+            MRNADIR=$BASEDIR/$TYPE/$SPECIES$SURFFIX/mRNA
             mkdir -p $MRNADIR/bwa
             ln $REFDIR/mRNA.fasta $MRNADIR
             ln $REFDIR/mRNA.fasta $MRNADIR/bwa
