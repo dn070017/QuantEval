@@ -30,19 +30,19 @@ gzip -d *
 
 mkdir -p "$REALDIR/dog/reads"
 cd "$REALDIR/dog/reads"
-fastq-dump --split-files SRR882109
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR882109
 ln SRR882109_1.fastq raw_r1.fastq 
 ln SRR882109_2.fastq raw_r2.fastq
 
 mkdir -p "$REALDIR/mouse/reads"
 cd "$REALDIR/mouse/reads"
-fastq-dump --split-files SRR203276
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR203276
 ln SRR203276_1.fastq raw_r1.fastq
 ln SRR203276_2.fastq raw_r2.fastq
 
 mkdir -p "$REALDIR/yeast/reads"
 cd "$REALDIR/yeast/reads"
-fastq-dump --split-files SRR453566
+#fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR453566
 ln SRR453566_1.fastq raw_r1.fastq
 ln SRR453566_2.fastq raw_r2.fastq
 
