@@ -89,7 +89,6 @@ class Sequence:
         
         self.corset_label = np.nan
         self.corset_size = np.nan
-        self.corset_xprs = np.nan
 
     def __hash__(self):
         return hash(self.name)
@@ -109,6 +108,9 @@ class Match:
         q_end = data['q_end']
         r_start = data['r_start']
         r_end = data['r_end']
+        
+        if r_start > r_end:
+            (r_start, r_end) = (r_end, r_start)
         
         identity = data['identity'] / 100
         
@@ -145,6 +147,9 @@ class Match:
         r_end = data['r_end']
         identity = data['identity'] / 100
         
+        if r_start > r_end:
+            (r_start, r_end) = (r_end, r_start)
+        
         alignment = np.zeros(q_seq.length).astype(float)
         alignment[q_start-1:q_end] = identity
         self.q_depth = np.maximum(self.q_depth, alignment)
@@ -162,6 +167,25 @@ class Match:
         self.r_count = np.maximum(self.r_count, count)
         
         return
+    
+def construct_sequences(file):
+    length = 0
+    sequences = dict()
+    with open(file, 'r') as fasta:
+        for i, line in enumerate(fasta):
+            sline = line.strip()
+            regex = re.match('>(\S+)', sline)
+            if regex:
+                if i != 0:
+                    sequences[name] = Sequence(name, length)
+                name = regex.group(1)
+                length = 0
+            else:        
+                length += len(sline)
+                
+        sequences[name] = Sequence(name, length)
+    
+    return sequences
 
 def find_match(blastn_dataframe, q_sequences, r_sequences, mode):
 
@@ -177,7 +201,7 @@ def find_match(blastn_dataframe, q_sequences, r_sequences, mode):
         r_start = data['r_start']
         q_end = data['q_end']
         r_end = data['r_end']
-        
+            
         identity = data['identity'] / 100
         bitscore = data['bitscore']
         
@@ -230,29 +254,9 @@ def read_blastn(file, identity_t=95, evalue_t=1e-5, length_t=0):
     identity_f = blastn.loc[:, 'identity'] >= identity_t
     evalue_f = blastn.loc[:, 'evalue'] <= evalue_t
     duplicate_f = blastn.loc[:, 'q_name'] != blastn.loc[:, 'r_name']
-    forward_f = blastn.loc[:, 'r_start'] <= blastn.loc[:, 'r_end']
-    filtered_blastn = blastn.loc[length_f & identity_f & evalue_f & duplicate_f & forward_f, :]
+    filtered_blastn = blastn.loc[length_f & identity_f & evalue_f & duplicate_f, :]
     
     return filtered_blastn
-
-def construct_sequences(file):
-    length = 0
-    sequences = dict()
-    with open(file, 'r') as fasta:
-        for i, line in enumerate(fasta):
-            sline = line.strip()
-            regex = re.match('>(\S+)', sline)
-            if regex:
-                if i != 0:
-                    sequences[name] = Sequence(name, length)
-                name = regex.group(1)
-                length = 0
-            else:        
-                length += len(sline)
-                
-        sequences[name] = Sequence(name, length)
-    
-    return sequences
 
 def read_expression(sequences, assembly, base_dir):
     kallisto = pd.read_table(base_dir + '/' + assembly + "/kallisto/abundance.tsv", sep='\t')
@@ -294,170 +298,34 @@ def read_expression(sequences, assembly, base_dir):
         
     return
 
-def generate_pickle(contigs, mRNAs, feature_dir):
-    with open(feature_dir + '/dev_contigs.pickle', 'wb') as output:
-        pickle.dump(contigs, output, pickle.HIGHEST_PROTOCOL)
-        
-    with open(feature_dir + '/dev_mRNAs.pickle', 'wb') as output:
-        pickle.dump(mRNAs, output, pickle.HIGHEST_PROTOCOL)
-    
+def read_transrate(sequences, assembly, base_dir):
+    transrate = pd.read_csv(base_dir + '/' + assembly + "/transrate/" + assembly + "/contigs.csv")
+    for i, data in transrate.iterrows():
+        sequences[data['contig_name']].tr_good = data['p_good']
+        sequences[data['contig_name']].tr_bases_covered = data['p_bases_covered']
+        sequences[data['contig_name']].tr_seq_true = data['p_seq_true']
+        sequences[data['contig_name']].tr_score = data['score']
+        sequences[data['contig_name']].tr_not_segmented = data['p_not_segmented']
     return
 
-def return_match(match):
-    return([match.q_name + ' aligned to ' + match.r_name,
-            match.q_name,
-            match.r_name,
-            match.q_rank,
-            match.r_rank,
-            np.around(np.sum(match.q_depth), 2),
-            np.around(np.sum(match.r_depth), 2),
-            match.q_depth[match.q_depth == 0].size,
-            match.r_depth[match.r_depth == 0].size])
-
-def return_seq(seq, seq_type):
-    data = [seq.name,
-            seq.length,
-            np.around(seq.expression_tpm['answer'], 2),
-            np.around(seq.expression_tpm['kallisto'], 2),
-            np.around(seq.expression_tpm['rsem'], 2),
-            np.around(seq.expression_tpm['salmon'], 2),
-            seq.cc_label,
-            seq.cc_size,
-            len(seq.match_seq['ss']),
-            np.around(np.sum(seq.match_depth['ss']), 2),
-            seq.match_count['ss'][seq.match_count['ss'] == 0].size,
-            len(seq.match_seq['tc']),
-            np.around(np.sum(seq.match_depth['tc']), 2),
-            seq.match_count['tc'][seq.match_count['tc'] == 0].size,
-            seq.match_count['tc'][seq.match_count['tc'] == 1].size,
-            seq.tr_good,
-            seq.tr_bases_covered,
-            seq.tr_seq_true,
-            seq.tr_score,
-            seq.tr_not_segmented,
-            seq.corset_label,
-            seq.corset_size,
-            seq.corset_xprs]
-    if seq_type == 'mRNA':
-        return(data + [seq.gene_name, seq.gene_cluster_size])
-    else:
-        return(data)
-
-def generate_table(contigs, mRNAs, tc_matches, feature_dir):
-    
-    t_ss_list = list()
-    mRNA_list = list()
-    for mRNA in mRNAs.values():
-        if len(mRNA.match_seq['ss']) != 0:
-            for match in mRNA.match_ordered['ss']:
-                t_ss_list.append(return_match(match))
-        mRNA_list.append(return_seq(mRNA, 'mRNA'))
-    
-    c_ss_list = list()
-    contig_list = list()
-    for contig in contigs.values():
-        if len(contig.match_seq['ss']) != 0:
-            for match in contig.match_ordered['ss']:
-                c_ss_list.append(return_match(match))
-        contig_list.append(return_seq(contig, 'contig'))
+def read_corset(sequences, assembly, base_dir):
+    corset_clusters = pd.read_table(base_dir + '/' + assembly + '/corset/corset-clusters.txt', sep='\t', header=None)
+    corset_clusters.columns = ['name', 'cluster']
+    count = corset_clusters['cluster'].value_counts()
+    for i, data in corset_clusters.iterrows():
+        cluster = data['cluster']
+        cluster_size = count[cluster]
+        sequences[data['name']].corset_label = cluster
+        sequences[data['name']].corset_size = cluster_size
         
-    tc_list = list()
-    for match in tc_matches.values():
-        tc_list.append(return_match(match))
-        
-    t_ss_table = pd.DataFrame(t_ss_list, columns=['m_name',
-                                                  't_name',
-                                                  't_name_r',
-                                                  't_ss_rank',
-                                                  't_ss_rank_r',
-                                                  't_ss_m_depth_sum',
-                                                  't_ss_m_depth_sum_r',
-                                                  't_ss_m_depth_zero',
-                                                  't_ss_m_depth_zero_r'])
-    
-    c_ss_table = pd.DataFrame(c_ss_list, columns=['m_name',
-                                                  'c_name',
-                                                  'c_name_r',
-                                                  'c_ss_rank',
-                                                  'c_ss_rank_r',
-                                                  'c_ss_m_depth_sum',
-                                                  'c_ss_m_depth_sum_r',
-                                                  'c_ss_m_depth_zero',
-                                                  'c_ss_m_depth_zero_r'])
-    
-    tc_table = pd.DataFrame(tc_list, columns=['m_name',
-                                              'c_name',
-                                              't_name',
-                                              'c_tc_rank',
-                                              't_tc_rank',
-                                              'c_tc_m_depth_sum',
-                                              't_tc_m_depth_sum',
-                                              'c_tc_m_depth_zero',
-                                              't_tc_m_depth_zero'])
-
-    mRNA_table = pd.DataFrame(mRNA_list, columns=['t_name', 
-                                                  't_length',
-                                                  't_answer_tpm',
-                                                  't_kallisto_tpm',
-                                                  't_rsem_tpm',
-                                                  't_salmon_tpm',
-                                                  't_cc_label',
-                                                  't_cc_size',
-                                                  't_ss_count',
-                                                  't_ss_depth_sum',  
-                                                  't_ss_depth_zero',
-                                                  't_tc_count',
-                                                  't_tc_depth_sum',
-                                                  't_tc_count_zero',
-                                                  't_tc_count_one',
-                                                  't_tr_good',
-                                                  't_tr_bases_covered',
-                                                  't_tr_seq_true',
-                                                  't_tr_score',
-                                                  't_tr_not_segmented',
-                                                  't_corset_label',
-                                                  't_corset_size',
-                                                  't_corset_xprs',
-                                                  't_gene_name',
-                                                  't_gene_cluster_size'])
-    
-    contig_table = pd.DataFrame(contig_list, columns=['c_name', 
-                                                      'c_length',
-                                                      'c_answer_tpm',
-                                                      'c_kallisto_tpm',
-                                                      'c_rsem_tpm',
-                                                      'c_salmon_tpm',
-                                                      'c_cc_label',
-                                                      'c_cc_size',
-                                                      'c_ss_count',
-                                                      'c_ss_depth_sum',  
-                                                      'c_ss_depth_zero',
-                                                      'c_tc_count',
-                                                      'c_tc_depth_sum',
-                                                      'c_tc_count_zero',
-                                                      'c_tc_count_one',
-                                                      'c_tr_good',
-                                                      'c_tr_bases_covered',
-                                                      'c_tr_seq_true',
-                                                      'c_tr_score',
-                                                      'c_tr_not_segmented',
-                                                      'c_corset_label',
-                                                      'c_corset_size',
-                                                      'c_corset_xprs'])
-
-    feature_table = pd.merge(tc_table, mRNA_table, on='t_name', how='left')
-    feature_table = pd.merge(feature_table, contig_table, on='c_name', how='left')
-    
-    mRNA_table.to_csv(feature_dir + '/dev_mRNA.tsv', sep='\t', index=False)
-    contig_table.to_csv(feature_dir + '/dev_contig.tsv', sep='\t', index=False)
-    
-    t_ss_table.to_csv(feature_dir + '/dev_t_ss.tsv', sep='\t', index=False)
-    c_ss_table.to_csv(feature_dir + '/dev_c_ss.tsv', sep='\t', index=False)
-    tc_table.to_csv(feature_dir + '/dev_tc.tsv', sep='\t', index=False)
-    
-    feature_table.to_csv(feature_dir + '/dev_feature.tsv', sep='\t', index=False)
-    
-    return feature_table, mRNA_table, contig_table, t_ss_table, c_ss_table, tc_table
+    i = 0
+    for name in sequences.keys():
+        seq = sequences[name]
+        if np.isnan(seq.corset_size):
+            seq.corset_label = 'NA-Cluster-' + str(i) + '.0'
+            seq.corset_size = 1
+            i += 1
+    return
 
 def match_gene_isoform(ref_dir, sequences):
     gtf = ref_dir + '/flux_simulator_clean.gtf'
@@ -487,57 +355,89 @@ def match_gene_isoform(ref_dir, sequences):
         
     return
 
-def read_transrate(sequences, assembly, base_dir):
-    transrate = pd.read_csv(base_dir + '/' + assembly + "/transrate/" + assembly + "/contigs.csv")
-    for i, data in transrate.iterrows():
-        sequences[data['contig_name']].tr_good = data['p_good']
-        sequences[data['contig_name']].tr_bases_covered = data['p_bases_covered']
-        sequences[data['contig_name']].tr_seq_true = data['p_seq_true']
-        sequences[data['contig_name']].tr_score = data['score']
-        sequences[data['contig_name']].tr_not_segmented = data['p_not_segmented']
-    return
+def return_match(match):
+    return([match.q_name + ' aligned to ' + match.r_name, match.q_name, match.r_name,
+            match.q_rank, match.r_rank, np.around(np.sum(match.q_depth), 2), np.around(np.sum(match.r_depth), 2),
+            match.q_depth[match.q_depth == 0].size, match.r_depth[match.r_depth == 0].size])
 
-def read_corset(sequences, assembly, base_dir):
-    corset_xprs = pd.read_table(base_dir + '/' + assembly + '/corset/corset-counts.txt', sep='\t')
-    corset_xprs.columns = ['name', 'corset']
-    xprs = dict()
-    for i, data in corset_xprs.iterrows():
-        xprs[data['name']] = data['corset']
-        
-    corset_clusters = pd.read_table(base_dir + '/' + assembly + '/corset/corset-clusters.txt', sep='\t', header=None)
-    corset_clusters.columns = ['name', 'cluster']
-    count = corset_clusters['cluster'].value_counts()
-    for i, data in corset_clusters.iterrows():
-        cluster = data['cluster']
-        cluster_size = count[cluster]
-        sequences[data['name']].corset_label = cluster
-        sequences[data['name']].corset_size = cluster_size
-        sequences[data['name']].corset_xprs = xprs[cluster]
-        
-    i = 0
-    for name in sequences.keys():
-        seq = sequences[name]
-        if np.isnan(seq.corset_size):
-            seq.corset_label = 'NA-Cluster-' + str(i) + '.0'
-            seq.corset_size = 1
-            seq.corset_xprs = 0
-            i += 1
-    return
+def return_seq(seq, seq_type):
+    data = [seq.name, seq.length, np.around(seq.expression_tpm['answer'], 2),
+            np.around(seq.expression_tpm['kallisto'], 2), np.around(seq.expression_tpm['rsem'], 2),
+            np.around(seq.expression_tpm['salmon'], 2), len(seq.match_seq['ss']), 
+            np.around(np.sum(seq.match_depth['ss']), 2), seq.match_count['ss'][seq.match_count['ss'] == 0].size,
+            len(seq.match_seq['tc']), np.around(np.sum(seq.match_depth['tc']), 2),
+            seq.match_count['tc'][seq.match_count['tc'] == 0].size,
+            seq.match_count['tc'][seq.match_count['tc'] == 1].size,
+            seq.tr_good, seq.tr_bases_covered, seq.tr_seq_true, seq.tr_score, seq.tr_not_segmented,
+            seq.corset_label, seq.corset_size]
+    if seq_type == 'mRNA':
+        return(data + [seq.gene_name, seq.gene_cluster_size])
+    else:
+        return(data)
 
-def group_cc(seqs, matches):
-    uf = UnionFind()
-    for match in matches.values():
-        if match.q_depth[match.q_depth>=0.95].size/match.q_count.size > 0.99 and \
-           match.r_depth[match.r_depth>=0.95].size/match.r_count.size > 0.99:
-            uf.union(match.q_name, match.r_name)
+def generate_table(contigs, mRNAs, tc_matches, feature_dir):
     
-    root = uf.root()
-    for cc in uf.parent.keys():
-        root_name = uf.find(cc)
-        seqs[cc].cc_label = root[root_name]
-        seqs[cc].cc_size = uf.get_size(root_name)
+    t_ss_list = list()
+    mRNA_list = list()
+    for mRNA in mRNAs.values():
+        if len(mRNA.match_seq['ss']) != 0:
+            for match in mRNA.match_ordered['ss']:
+                t_ss_list.append(return_match(match))
+        mRNA_list.append(return_seq(mRNA, 'mRNA'))
+    
+    c_ss_list = list()
+    contig_list = list()
+    for contig in contigs.values():
+        if len(contig.match_seq['ss']) != 0:
+            for match in contig.match_ordered['ss']:
+                c_ss_list.append(return_match(match))
+        contig_list.append(return_seq(contig, 'contig'))
+        
+    tc_list = list()
+    for match in tc_matches.values():
+        tc_list.append(return_match(match))
+        
+    t_ss_table = pd.DataFrame(t_ss_list, columns=['m_name', 't_name', 't_name_r', 't_ss_rank', 't_ss_rank_r',
+                                                  't_ss_m_depth_sum', 't_ss_m_depth_sum_r', 't_ss_m_depth_zero',
+                                                  't_ss_m_depth_zero_r'])
+    
+    c_ss_table = pd.DataFrame(c_ss_list, columns=['m_name', 'c_name', 'c_name_r', 'c_ss_rank', 'c_ss_rank_r',
+                                                  'c_ss_m_depth_sum', 'c_ss_m_depth_sum_r', 'c_ss_m_depth_zero',
+                                                  'c_ss_m_depth_zero_r'])
+    
+    tc_table = pd.DataFrame(tc_list, columns=['m_name', 'c_name', 't_name', 'c_tc_rank', 't_tc_rank',
+                                              'c_tc_m_depth_sum', 't_tc_m_depth_sum', 'c_tc_m_depth_zero',
+                                              't_tc_m_depth_zero'])
 
-    return
+    mRNA_table = pd.DataFrame(mRNA_list, columns=['t_name', 't_length', 't_answer_tpm', 't_kallisto_tpm',
+                                                  't_rsem_tpm', 't_salmon_tpm', 't_ss_count', 't_ss_depth_sum',  
+                                                  't_ss_depth_zero', 't_tc_count', 't_tc_depth_sum', 
+                                                  't_tc_count_zero', 't_tc_count_one', 't_tr_good',
+                                                  't_tr_bases_covered', 't_tr_seq_true', 't_tr_score',
+                                                  't_tr_not_segmented', 't_corset_label', 't_corset_size',
+                                                  't_gene_name', 't_gene_cluster_size'])
+    
+    contig_table = pd.DataFrame(contig_list, columns=['c_name', 'c_length', 'c_answer_tpm', 'c_kallisto_tpm',
+                                                      'c_rsem_tpm', 'c_salmon_tpm', 'c_ss_count', 'c_ss_depth_sum',  
+                                                      'c_ss_depth_zero', 'c_tc_count', 'c_tc_depth_sum',
+                                                      'c_tc_count_zero', 'c_tc_count_one', 'c_tr_good', 
+                                                      'c_tr_bases_covered', 'c_tr_seq_true', 'c_tr_score', 
+                                                      'c_tr_not_segmented', 'c_corset_label', 'c_corset_size'])
+    contig_table = contig_table.drop(['c_answer_tpm'], axis=1)
+    
+    feature_table = pd.merge(tc_table, mRNA_table, on='t_name', how='left')
+    feature_table = pd.merge(feature_table, contig_table, on='c_name', how='left')
+    
+    mRNA_table.to_csv(feature_dir + '/mRNA.tsv', sep='\t', index=False)
+    contig_table.to_csv(feature_dir + '/contig.tsv', sep='\t', index=False)
+    
+    t_ss_table.to_csv(feature_dir + '/mRNA_ss.tsv', sep='\t', index=False)
+    c_ss_table.to_csv(feature_dir + '/contig_ss.tsv', sep='\t', index=False)
+    tc_table.to_csv(feature_dir + '/CTPs.tsv', sep='\t', index=False)
+    
+    feature_table.to_csv(feature_dir + '/features.tsv', sep='\t', index=False)
+    
+    return feature_table, mRNA_table, contig_table, t_ss_table, c_ss_table, tc_table
 
 def generate_mRNA_table(mRNAs, feature_dir):
     mRNA_list = list()
@@ -549,9 +449,9 @@ def generate_mRNA_table(mRNAs, feature_dir):
                 np.around(mRNA.expression_tpm['kallisto'], 2),
                 np.around(mRNA.expression_tpm['rsem'], 2),
                 np.around(mRNA.expression_tpm['salmon'], 2),
-                len(mRNA.ss),
-                np.around(np.sum(mRNA.ss_depth), 2),
-                mRNA.ss_depth[mRNA.ss_depth == 0].size])
+                len(mRNA.match_seq['ss']),
+                np.around(np.sum(mRNA.match_depth['ss']), 2),
+                mRNA.match_count['ss'][mRNA.match_count['ss'] == 0]])
     
     mRNA_table = pd.DataFrame(mRNA_list, columns=['t_name', 
                                                   't_length',
@@ -568,6 +468,7 @@ def generate_mRNA_table(mRNAs, feature_dir):
     return mRNA_table
 
 def main(base_dir, ref_dir, assembly):
+#if True:
     print('start main program')
     start_time = time.time()
 
@@ -576,7 +477,8 @@ def main(base_dir, ref_dir, assembly):
     #assembly = 'transabyss'
     #assembly = 'trinity'
     
-    #base_dir = "/home/dn070017/projects/QuantEval/simulation/" + species
+    #base_dir = "/home/dn070017/projects/QuantEval/simulation/dog_50x/"
+    #ref_dir = "/home/dn070017/projects/QuantEval/reference/dog/"
     mRNA_dir = base_dir + "/mRNA/"
     contig_dir = base_dir + "/" + assembly + "/"
     
@@ -587,15 +489,12 @@ def main(base_dir, ref_dir, assembly):
     read_corset(mRNAs, 'mRNA', base_dir)
     
     print('    - start analyzing gene-isoform relation...')
-    #r_species = 'mouse' 
-    #ref_dir = "/home/dn070017/projects/QuantEval/reference/" + r_species
     match_gene_isoform(ref_dir, mRNAs)
     
     print('    - start analyzing similar subsequences in transcripts...')
     m_self_blastn = mRNA_dir + "/blastn/self.tsv"
     m_self_blastn = read_blastn(m_self_blastn)
     t_ss_matches = find_match(m_self_blastn, mRNAs, copy.deepcopy(mRNAs), 'ss')
-    group_cc(mRNAs, t_ss_matches)
     
     if assembly == 'mRNA':
         feature_dir = mRNA_dir + '/features/'
@@ -618,15 +517,13 @@ def main(base_dir, ref_dir, assembly):
         c_self_blastn = contig_dir + "/blastn/self.tsv"
         c_self_blastn = read_blastn(c_self_blastn)
         c_ss_matches = find_match(c_self_blastn, contigs, copy.deepcopy(contigs), 'ss')
-        group_cc(contigs, c_ss_matches)
         
         print('    - start analyzing matches between transcripts and contigs...')
         c_m_blastn = contig_dir + "/blastn/contig_to_mRNA.tsv"
         c_m_blastn = read_blastn(c_m_blastn)
         tc_matches = find_match(c_m_blastn, contigs, mRNAs, 'tc')
         
-        print('    - start generating summary tables...')
-        #generate_pickle(contigs, mRNAs, feature_dir)
+        print('    - start generating summary tables...')        
         feature_table, mRNA_table, contig_table, t_ss_table, c_ss_table, tc_table = generate_table(contigs, mRNAs, tc_matches, feature_dir)
     
     print('finished, time elapsed: ', np.around(time.time() - start_time, 3), ' seconds', sep='')
@@ -639,3 +536,29 @@ if __name__ == '__main__':
     ref_dir = sys.argv[2]
     assembly = sys.argv[3]
     main(base_dir, ref_dir, assembly)
+    
+# DEPRECATED FUNCTION #
+def generate_pickle(contigs, mRNAs, feature_dir):
+    with open(feature_dir + '/dev_contigs.pickle', 'wb') as output:
+        pickle.dump(contigs, output, pickle.HIGHEST_PROTOCOL)
+        
+    with open(feature_dir + '/dev_mRNAs.pickle', 'wb') as output:
+        pickle.dump(mRNAs, output, pickle.HIGHEST_PROTOCOL)
+    
+    return
+
+# DEPRECATED FUNCTION #
+def group_cc(seqs, matches):
+    uf = UnionFind()
+    for match in matches.values():
+        if match.q_depth[match.q_depth>=0.95].size/match.q_count.size > 0.99 and \
+           match.r_depth[match.r_depth>=0.95].size/match.r_count.size > 0.99:
+            uf.union(match.q_name, match.r_name)
+    
+    root = uf.root()
+    for cc in uf.parent.keys():
+        root_name = uf.find(cc)
+        seqs[cc].cc_label = root[root_name]
+        seqs[cc].cc_size = uf.get_size(root_name)
+
+    return
