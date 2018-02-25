@@ -246,7 +246,7 @@ def find_match(blastn_dataframe, q_sequences, r_sequences, mode):
            
     return matches
 
-def read_blastn(file, identity_t=95, evalue_t=1e-5, length_t=0):
+def read_blastn(file, identity_t=70, evalue_t=1e-5, length_t=0):
     blastn = pd.read_table(file, sep='\t', header=None)
     blastn.columns = ['q_name', 'r_name', 'identity', 'm_length', 'mismatch', 'gap', 
                       'q_start', 'q_end', 'r_start', 'r_end', 'evalue', 'bitscore']
