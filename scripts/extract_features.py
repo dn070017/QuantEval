@@ -331,18 +331,18 @@ def generate_table(contigs=None, mRNAs=None, c_ss_matches=None, t_ss_matches=Non
     
     return
 
-#def main(base_dir, ref_dir, assembly):
-if True:
+def main(base_dir, ref_dir, assembly):
+#if True:
     print('start main program')
     start_time = time.time()
 
-    assembly = 'mRNA'
+    #assembly = 'mRNA'
     #assembly = 'rnaspades'
     #assembly = 'transabyss'
     #assembly = 'trinity'
     
-    base_dir = "/home/dn070017/projects/QuantEval/simulation/yeast_50x/"
-    ref_dir = "/home/dn070017/projects/QuantEval/reference/yeast/"
+    #base_dir = "/home/dn070017/projects/QuantEval/simulation/yeast_50x/"
+    #ref_dir = "/home/dn070017/projects/QuantEval/reference/yeast/"
     mRNA_dir = base_dir + "/mRNA/"
     contig_dir = base_dir + "/" + assembly + "/"
     
@@ -364,7 +364,7 @@ if True:
         feature_dir = mRNA_dir + '/features/'
         if not os.path.exists(feature_dir):
             os.makedirs(feature_dir)
-        generate_table(contigs, mRNAs, c_ss_matches, t_ss_matches, tc_matches, feature_dir=feature_dir, data='mRNA')
+        generate_table(None, mRNAs, None, t_ss_matches, None, feature_dir=feature_dir, data='mRNA')
     
     else:
         feature_dir = contig_dir + '/features/'
