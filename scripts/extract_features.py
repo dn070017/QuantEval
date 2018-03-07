@@ -12,6 +12,45 @@ import pandas as pd
 
 from collections import defaultdict
 
+class UnionFind:
+   
+    def __init__(self, seqs):
+        self.parent = dict()
+        self.size = dict()
+        for name in seqs.keys():
+            self.parent[name] = name
+            self.size[name] = 1
+   
+    def find(self, a):
+        while a != self.parent[a]:
+            a = self.parent[a]
+        return a
+    
+    def union(self, a, b):
+        a_root = self.find(a)
+        b_root = self.find(b)
+        if a_root == b_root:
+            return
+        else:
+            if self.size[b_root] > self.size[a_root]:
+                self.parent[a_root] = b_root
+                self.size[b_root] += self.size[a_root]
+            else:
+                self.parent[b_root] = a_root
+                self.size[a_root] += self.size[b_root]
+         
+    def get_size(self, a):
+        return self.size[self.find(a)]
+    
+    def get_root_label(self):
+        i = 1
+        root_label = dict()
+        for k, v in self.parent.items():
+            if k == v:
+                root_label[k] = 'cluster_' + str(i)
+                i += 1
+        return root_label
+
 class Sequence:
     def __init__(self, name, length):
         self.name = name
@@ -21,6 +60,9 @@ class Sequence:
         self.gene_size = np.nan
         self.corset_label = np.nan
         self.corset_size = np.nan
+        self.clustered = False
+        self.cluster_label = 'unclustered'
+        self.cluster_size = 0
         
         self.tr_good = np.nan
         self.tr_bases_covered = np.nan 
@@ -266,7 +308,9 @@ def return_match(match):
             match.q_global_identity, match.r_global_identity])
 
 def return_seq(seq, seq_type):
-    data = [seq.name, seq.length, np.around(seq.xprs_tpm['answer'], 2),
+    data = [seq.name, seq.length, 
+            seq.cluster_label, seq.cluster_size,
+            np.around(seq.xprs_tpm['answer'], 2), 
             np.around(seq.xprs_tpm['kallisto'], 2), np.around(seq.xprs_tpm['rsem'], 2),
             np.around(seq.xprs_tpm['salmon'], 2), 
             seq.tr_good, seq.tr_bases_covered, seq.tr_seq_true, seq.tr_score, seq.tr_not_segmented,
@@ -283,8 +327,10 @@ def generate_table(contigs=None, mRNAs=None, c_ss_matches=None, t_ss_matches=Non
     for match in t_ss_matches.values():
         t_ss_list.append(return_match(match))
     
-    mRNA_table = pd.DataFrame(mRNA_list, columns=['t_name', 't_length', 't_answer_tpm', 't_kallisto_tpm',
-                                                  't_rsem_tpm', 't_salmon_tpm', 't_tr_good',
+    mRNA_table = pd.DataFrame(mRNA_list, columns=['t_name', 't_length', 
+                                                  't_cluster_label', 't_cluster_size',
+                                                  't_answer_tpm', 't_kallisto_tpm',
+                                                  't_rsem_tpm', 't_salmon_tpm', 't_tr_good', 
                                                   't_tr_bases_covered', 't_tr_seq_true', 't_tr_score',
                                                   't_tr_not_segmented', 't_corset_label', 't_corset_size',
                                                   't_gene_name', 't_gene_size'])
@@ -308,8 +354,10 @@ def generate_table(contigs=None, mRNAs=None, c_ss_matches=None, t_ss_matches=Non
         for match in tc_matches.values():
             tc_list.append(return_match(match))
             
-        contig_table = pd.DataFrame(contig_list, columns=['c_name', 'c_length', 'c_answer_tpm', 'c_kallisto_tpm',
-                                                          'c_rsem_tpm', 'c_salmon_tpm', 'c_tr_good', 
+        contig_table = pd.DataFrame(contig_list, columns=['c_name', 'c_length', 
+                                                          'c_cluster_label', 'c_cluster_size',
+                                                          'c_answer_tpm', 'c_kallisto_tpm',
+                                                          'c_rsem_tpm', 'c_salmon_tpm', 'c_tr_good',
                                                           'c_tr_bases_covered', 'c_tr_seq_true', 'c_tr_score', 
                                                           'c_tr_not_segmented', 'c_corset_label', 'c_corset_size',
                                                           'c_gene_name', 'c_gene_size'])    
@@ -330,6 +378,25 @@ def generate_table(contigs=None, mRNAs=None, c_ss_matches=None, t_ss_matches=Non
         feature_table.to_csv(feature_dir + '/features.tsv', sep='\t', index=False)
     
     return
+
+def connected_component(seqs, matches, threshold=0.9):
+    uf = UnionFind(seqs)
+    clusters = defaultdict(list)
+    
+    for match in matches.values():
+        q_seq = seqs[match.q_name]
+        r_seq = seqs[match.r_name]
+        if match.q_global_identity > threshold or match.r_global_identity > threshold:
+            uf.union(q_seq.name, r_seq.name)
+    
+    root_label = uf.get_root_label()
+    for seq_name in uf.parent.keys():
+        root_name = uf.find(seq_name)
+        seqs[seq_name].cluster_label = root_label[root_name]
+        seqs[seq_name].cluster_size = uf.get_size(root_name)
+        clusters[root_label[root_name]].append(seqs[seq_name])
+        
+    return uf, clusters
 
 def main(base_dir, ref_dir, assembly):
 #if True:
@@ -360,6 +427,9 @@ def main(base_dir, ref_dir, assembly):
     m_self_blastn = read_blastn(m_self_blastn)
     t_ss_matches = find_match(m_self_blastn, mRNAs, copy.deepcopy(mRNAs), 'ss')
     
+    print('    - start building connected component for transcipts...')
+    t_uf, t_clusters = connected_component(mRNAs, t_ss_matches)
+    
     if assembly == 'mRNA':
         feature_dir = mRNA_dir + '/features/'
         if not os.path.exists(feature_dir):
@@ -381,6 +451,9 @@ def main(base_dir, ref_dir, assembly):
         c_self_blastn = contig_dir + "/blastn/self.tsv"
         c_self_blastn = read_blastn(c_self_blastn)
         c_ss_matches = find_match(c_self_blastn, contigs, copy.deepcopy(contigs), 'ss')
+        
+        print('    - start building connected component for contigs...')
+        c_uf, c_clusters = connected_component(contigs, c_ss_matches)
         
         print('    - start analyzing matches between transcripts and contigs...')
         c_m_blastn = contig_dir + "/blastn/contig_to_mRNA.tsv"
