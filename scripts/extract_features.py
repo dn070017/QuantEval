@@ -48,9 +48,9 @@ class Match:
         
         if r_start > r_end:
             (r_start, r_end) = (r_end, r_start)
-            self.orientation = 'F'
-        else:
             self.orientation = 'R'
+        else:
+            self.orientation = 'F'
         
         self.m_name = '.'.join([self.q_name, self.r_name, self.orientation])
         
