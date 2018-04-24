@@ -7,14 +7,14 @@ SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASEDIR="$SCRIPTDIR/../"
 TRIMMOMATIC="$HOME/bin/Trimmomatic-0.36/trimmomatic-0.36.jar"
 
-#for TYPE in 'real' 'simulation'
-for TYPE in 'real'
+#for TYPE in 'real' 'profile' 'simulation'
+for TYPE in 'real' 'simulation'
 do
-    if [ $TYPE == 'real' ]
+    if [ $TYPE == 'simulation' ]
     then
-        READ="raw"
-    else
         READ="flux_simulator"
+    else
+        READ="raw"
     fi
     
     for SPECIES in 'yeast' 'dog' 'mouse'
@@ -33,15 +33,23 @@ do
         for SURFFIX in "${SURFFIXES[@]}" 
         do
             READDIR=$BASEDIR/$TYPE/$SPECIES$SURFFIX/reads
+            if [ $TYPE == 'profile' ]
+            then
+                mkdir -p $READDIR
+                #ln $BASEDIR/real/$SPECIES$SURFFIX/mRNA/rsem_sim/rsem_sim_1.fq $READDIR/${READ}_r1.fastq
+                #ln $BASEDIR/real/$SPECIES$SURFFIX/mRNA/rsem_sim/rsem_sim_2.fq $READDIR/${READ}_r2.fastq
+            fi
             mkdir -p $READDIR/fastqc
             #fastqc -t $THREADS -f fastq -o $READDIR/fastqc --nogroup $READDIR/${READ}_r*.fastq
 
             #java -jar $TRIMMOMATIC PE -threads $THREADS -phred33 $READDIR/${READ}_r1.fastq $READDIR/${READ}_r2.fastq $READDIR/read_1.fastq $READDIR/unpaired_read_1.fastq $READDIR/read_2.fastq $READDIR/unpaired_read_2.fastq SLIDINGWINDOW:4:20 MINLEN:30
             #fastqc -t $THREADS -f fastq -o $READDIR/fastqc --nogroup $READDIR/read_*.fastq
 
+            $BASEDIR/scripts/count_unpaired_read.py $READDIR/unpaired_read_1.fastq $READDIR/unpaired_read_2.fastq $READDIR/unpaired_read_count.pickle
+
             REFDIR=$BASEDIR/reference/$SPECIES
             MRNADIR=$BASEDIR/$TYPE/$SPECIES$SURFFIX/mRNA
-            #mkdir -p $MRNADIR/bwa
+            mkdir -p $MRNADIR/bwa
             #ln $REFDIR/mRNA.fasta $MRNADIR
             #ln $REFDIR/mRNA.fasta $MRNADIR/bwa
             #bwa index -a is -p $MRNADIR/bwa/mRNA $MRNADIR/bwa/mRNA.fasta
@@ -64,12 +72,6 @@ do
                 N=`awk 'NR == 1 {print $4}' $MRNADIR/rsem_sim/rsem.stat/rsem.cnt`
 
                 #rsem-simulate-reads $MRNADIR/rsem_sim/rsem.index $MRNADIR/rsem_sim/rsem.stat/rsem.model $MRNADIR/rsem_sim/rsem.isoforms.results $THETA $N $MRNADIR/rsem_sim/rsem_sim
-
-                mv $READDIR/read_1.fastq $READDIR/read_1_fork.fastq
-                mv $READDIR/read_2.fastq $READDIR/read_2_fork.fastq
-
-                ln $MRNADIR/rsem_sim/rsem_sim_1.fq $READDIR/read_1.fastq
-                ln $MRNADIR/rsem_sim/rsem_sim_2.fq $READDIR/read_2.fastq
             fi
         done
     done
