@@ -42,7 +42,7 @@ ln SRR203276_2.fastq raw_r2.fastq
 
 mkdir -p "$REALDIR/yeast/reads"
 cd "$REALDIR/yeast/reads"
-#fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR453566
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR453566
 ln SRR453566_1.fastq raw_r1.fastq
 ln SRR453566_2.fastq raw_r2.fastq
 
