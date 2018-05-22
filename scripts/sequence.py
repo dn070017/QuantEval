@@ -1,5 +1,5 @@
 
-import numpy as np
+from collections import defaultdict
 
 class Sequence:
     def __init__(self, name, length):
@@ -7,16 +7,11 @@ class Sequence:
         self.length = length
         
         self.label = dict()
-        self.size = dict()
         self.tr = dict()
         self.xprs = dict()
-        
-        #self.tr_good = np.nan
-        #self.tr_bases_covered = np.nan 
-        #self.tr_seq_true = np.nan 
-        #self.tr_score =np.nan 
-        #self.tr_not_segmented = np.nan        
-        
+        self.contribute_xprs = defaultdict(dict)
+        self.relative_xprs = defaultdict(dict)
+            
     def __hash__(self):
         return hash(self.name)
     
