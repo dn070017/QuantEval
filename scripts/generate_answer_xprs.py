@@ -90,7 +90,7 @@ def calculate_answer_tpm(flux_simulator_pro, flux_simulator_lib, unpaired_pickle
     flux_simulator = flux_simulator.fillna(value=0)
     flux_simulator['read_per_nucleotide'] = (flux_simulator['read_count'] - flux_simulator['count']) / flux_simulator['eff_length']
     flux_simulator['answer_tpm'] = 10 ** 6 * flux_simulator['read_per_nucleotide'] / np.sum(flux_simulator['read_per_nucleotide'])
-    flux_simulator['answer_count'] = flux_simulator['read_count']
+    flux_simulator['answer_count'] = flux_simulator['read_count'] - flux_simulator['count']
     flux_simulator = flux_simulator.loc[:, ('name', 'answer_tpm', 'answer_count')]
     flux_simulator = flux_simulator.round({'answer_tpm': 3})
 
@@ -114,7 +114,7 @@ def average_tpm(kallisto, rsem, salmon, output):
     tmp['answer_tpm'] = (tmp['kallisto_tpm'] + tmp['rsem_tpm'] + tmp['salmon_tpm']) / 3
     tmp['answer_count'] = (tmp['kallisto_count'] + tmp['rsem_count'] + tmp['salmon_count']) / 3
     expression_table = tmp.loc[:, ('name', 'answer_tpm', 'answer_count')]
-    expression_table = expression_table.round({'answer_tpm': 3})
+    expression_table = expression_table.round({'answer_tpm': 3, 'answer_count': 3})
 
     expression_table.to_csv(output, sep='\t', index=False)
     

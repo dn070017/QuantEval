@@ -27,13 +27,13 @@ do
         fastqc -t $THREADS -f fastq -o $READDIR/fastqc --nogroup $READDIR/${READ}_r*.fastq
 
         java -jar $TRIMMOMATIC PE -threads $THREADS -phred33 $READDIR/${READ}_r1.fastq $READDIR/${READ}_r2.fastq $READDIR/read_1.fastq $READDIR/unpaired_read_1.fastq $READDIR/read_2.fastq $READDIR/unpaired_read_2.fastq SLIDINGWINDOW:4:20 MINLEN:30
-        fastqc -t $THREADS -f fastq -o $READDIR/fastqc --nogroup $READDIR/read_*.fastq
-            
+        #fastqc -t $THREADS -f fastq -o $READDIR/fastqc --nogroup $READDIR/read_*.fastq
+           
         if [ $TYPE == 'simulation' ]
         then
             mkdir -p $MRNADIR/answer/
             $BASEDIR/scripts/count_unpaired_read.py $READDIR/unpaired_read_1.fastq $READDIR/unpaired_read_2.fastq $READDIR/unpaired_read_count.picklee
-            $BASEDIR/scripts/generate_answer_xprs.py $TYPE $SIMDIR/flux_simulator.pro $SIMDIR/flux_simulator.lib $READDIR/unpaired_read_count.pickle $MRNADIR/answer/answer_tpm.tsv
+            $BASEDIR/scripts/generate_answer_xprs.py $TYPE $SIMDIR/flux_simulator.pro $SIMDIR/flux_simulator.lib $READDIR/unpaired_read_count.pickle $MRNADIR/answer/answer_xprs.tsv
         fi
 
         REFDIR=$BASEDIR/reference/$SPECIES
