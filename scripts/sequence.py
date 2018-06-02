@@ -8,9 +8,13 @@ class Sequence:
         
         self.label = dict()
         self.tr = dict()
-        self.xprs = dict()
-        self.contribute_xprs = defaultdict(dict)
-        self.relative_xprs = defaultdict(dict)
+        self.xprs_tpm = dict()
+        self.relative_xprs_tpm = defaultdict(dict)
+        self.contribute_xprs_tpm = defaultdict(dict)
+        
+        self.xprs_count = dict()
+        self.relative_xprs_count = defaultdict(dict)
+        self.contribute_xprs_count = defaultdict(dict)
             
     def __hash__(self):
         return hash(self.name)

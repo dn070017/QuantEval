@@ -32,12 +32,13 @@ do
     "ref_xprs_label": ["answer", "kallisto", "rsem", "salmon"],
     "ref_xprs_header": [true, true, true, true],
     "ref_xprs_name_col": [1, 1, 1, 1], 
-    "ref_xprs_value_col": [2, 5, 6, 4], 
+    "ref_xprs_tpm_col": [2, 5, 6, 4], 
+    "ref_xprs_count_col": [3, 4, 5, 5],
     "ref_transrate": "$REFDIR/transrate/mRNA/contigs.csv",
     "output_dir": "$REFDIR/QuantEval/"
 }
 EOF
-               python3 $BASEDIR/scripts/test.py --input $REFDIR/QuantEval.json --reference
+               python3 $BASEDIR/scripts/QuantEval.py --input $REFDIR/QuantEval.json --reference
            else
                cat > $SEQDIR/QuantEval.json << EOF
 {
@@ -50,13 +51,14 @@ EOF
     "contig_xprs_label": ["kallisto", "rsem", "salmon"],
     "contig_xprs_header": [true, true, true],
     "contig_xprs_name_col": [1, 1, 1], 
-    "contig_xprs_value_col": [5, 6, 4], 
+    "contig_xprs_tpm_col": [5, 6, 4], 
+    "contig_xprs_count_col": [4, 5, 5],
     "contig_transrate": "$SEQDIR/transrate/$SEQ/contigs.csv",
     "match_blastn": "$SEQDIR/blastn/contig_to_mRNA.tsv",
     "output_dir": "$SEQDIR/QuantEval/"
 }
 EOF
-                python3 $BASEDIR/scripts/test.py --input $SEQDIR/QuantEval.json --reference --contig --match
+                python3 $BASEDIR/scripts/QuantEval.py --input $SEQDIR/QuantEval.json --reference --contig --match
             fi
         done
     done

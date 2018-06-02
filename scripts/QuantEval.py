@@ -96,12 +96,9 @@ def main(args):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    #parser.add_argument('--gene', action='store_true', help='perform gene-isoform analysis on reference')
     parser.add_argument('--reference', action='store_true', help='perform reference analysis')
     parser.add_argument('--contig', action='store_true', help='perform contig analysis')
     parser.add_argument('--match', action='store_true', help='perform match analysis')    
-    #parser.add_argument('--write', action='store_true', help='write reference pickle')
-    #parser.add_argument('--read', action='store_true', help='read reference pickle')
     
     required = parser.add_argument_group('required arguments')
     required.add_argument('-i', '--input', type=str, help='input files in json format', required=True)
