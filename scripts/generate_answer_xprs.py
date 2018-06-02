@@ -89,30 +89,32 @@ def calculate_answer_tpm(flux_simulator_pro, flux_simulator_lib, unpaired_pickle
     flux_simulator = pd.merge(unpaired_read_count, flux_simulator, on='name', how='outer') 
     flux_simulator = flux_simulator.fillna(value=0)
     flux_simulator['read_per_nucleotide'] = (flux_simulator['read_count'] - flux_simulator['count']) / flux_simulator['eff_length']
-    flux_simulator['answer'] = 10 ** 6 * flux_simulator['read_per_nucleotide'] / np.sum(flux_simulator['read_per_nucleotide'])
-    flux_simulator = flux_simulator.loc[:, ('name', 'answer')]
-    flux_simulator = flux_simulator.round({'answer': 3})
+    flux_simulator['answer_tpm'] = 10 ** 6 * flux_simulator['read_per_nucleotide'] / np.sum(flux_simulator['read_per_nucleotide'])
+    flux_simulator['answer_count'] = flux_simulator['read_count']
+    flux_simulator = flux_simulator.loc[:, ('name', 'answer_tpm', 'answer_count')]
+    flux_simulator = flux_simulator.round({'answer_tpm': 3})
 
     flux_simulator.to_csv(output, sep='\t', index=False)
     
 def average_tpm(kallisto, rsem, salmon, output):
     kallisto = pd.read_table(kallisto, sep='\t')
-    kallisto = kallisto.rename(columns={'target_id': 'name', 'tpm': 'kallisto'})
-    kallisto = kallisto.loc[:, ('name', 'kallisto')]
+    kallisto = kallisto.rename(columns={'target_id': 'name', 'tpm': 'kallisto_tpm', 'est_counts': 'kallisto_count'})
+    kallisto = kallisto.loc[:, ('name', 'kallisto_tpm', 'kallisto_count')]
 
     rsem = pd.read_table(rsem, sep='\t')
-    rsem = rsem.rename(columns={'transcript_id': 'name', 'TPM': 'rsem'})
-    rsem = rsem.loc[:, ('name', 'rsem')]
+    rsem = rsem.rename(columns={'transcript_id': 'name', 'TPM': 'rsem_tpm', 'expected_count': 'rsem_count'})
+    rsem = rsem.loc[:, ('name', 'rsem_tpm', 'rsem_count')]
 
     salmon = pd.read_table(salmon, sep='\t')
-    salmon = salmon.rename(columns={'Name': 'name', 'TPM': 'salmon'})
-    salmon = salmon.loc[:, ('name', 'salmon')]
+    salmon = salmon.rename(columns={'Name': 'name', 'TPM': 'salmon_tpm', 'NumReads': 'salmon_count'})
+    salmon = salmon.loc[:, ('name', 'salmon_tpm', 'salmon_count')]
 
     tmp = pd.merge(salmon, rsem, on='name', how='inner')
     tmp = pd.merge(kallisto, tmp, on='name', how='inner')
-    tmp['answer'] = (tmp['kallisto'] + tmp['rsem'] + tmp['salmon']) / 3
-    expression_table = tmp.loc[:, ('name', 'answer')]
-    expression_table = expression_table.round({'answer': 3})
+    tmp['answer_tpm'] = (tmp['kallisto_tpm'] + tmp['rsem_tpm'] + tmp['salmon_tpm']) / 3
+    tmp['answer_count'] = (tmp['kallisto_count'] + tmp['rsem_count'] + tmp['salmon_count']) / 3
+    expression_table = tmp.loc[:, ('name', 'answer_tpm', 'answer_count')]
+    expression_table = expression_table.round({'answer_tpm': 3})
 
     expression_table.to_csv(output, sep='\t', index=False)
     
