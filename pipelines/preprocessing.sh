@@ -33,7 +33,7 @@ do
         then
             mkdir -p $MRNADIR/answer/
             $BASEDIR/scripts/count_unpaired_read.py $READDIR/unpaired_read_1.fastq $READDIR/unpaired_read_2.fastq $READDIR/unpaired_read_count.picklee
-            $BASEDIR/scripts/generate_answer_tpm.py $TYPE $SIMDIR/flux_simulator.pro $SIMDIR/flux_simulator.lib $READDIR/unpaired_read_count.pickle $MRNADIR/answer/answer_tpm.tsv
+            $BASEDIR/scripts/generate_answer_xprs.py $TYPE $SIMDIR/flux_simulator.pro $SIMDIR/flux_simulator.lib $READDIR/unpaired_read_count.pickle $MRNADIR/answer/answer_tpm.tsv
         fi
 
         REFDIR=$BASEDIR/reference/$SPECIES
