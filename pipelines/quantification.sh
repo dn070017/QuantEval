@@ -55,7 +55,7 @@ do
             if [ $SEQ == 'mRNA' ] && [ $TYPE == 'real' ]
             then
                 mkdir -p $SEQDIR/answer
-                $BASEDIR/scripts/generate_answer_tpm.py $TYPE $SEQDIR/kallisto/abundance.tsv $SEQDIR/rsem/rsem.isoforms.results $SEQDIR/salmon/quant.sf $SEQDIR/answer/answer_tpm.tsv
+                $BASEDIR/scripts/generate_answer_xprs.py $TYPE $SEQDIR/kallisto/abundance.tsv $SEQDIR/rsem/rsem.isoforms.results $SEQDIR/salmon/quant.sf $SEQDIR/answer/answer_xprs.tsv
             fi
         done
     done

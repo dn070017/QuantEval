@@ -65,7 +65,8 @@ def process_and_validate_argument(args):
                         required_file.extend([target + '_xprs_file',
                                               target + '_xprs_header',
                                               target + '_xprs_name_col',
-                                              target + '_xprs_value_col'])
+                                              target + '_xprs_tpm_col',
+                                              target + '_xprs_count_col'])
                         if target + '_xprs_label' not in input_file:
                             input_file[target + '_xprs_label'] = list()
                             for i in range(0, xprs_length):
@@ -243,7 +244,8 @@ def read_expression(input_file, seq_dict, target):
     for i, xprs_file in enumerate(input_file[target + '_xprs_file']):
         label = input_file[target + '_xprs_label'][i]
         name_col = int(input_file[target + '_xprs_name_col'][i]) - 1
-        value_col = int(input_file[target + '_xprs_value_col'][i]) - 1
+        tpm_col = int(input_file[target + '_xprs_tpm_col'][i]) - 1
+        count_col = int(input_file[target + '_xprs_count_col'][i]) - 1 
         header = input_file[target + '_xprs_header'][i]
     
         with open(xprs_file, 'r') as xprs_input:
@@ -252,7 +254,8 @@ def read_expression(input_file, seq_dict, target):
                     continue
                 col_data = data.split('\t')
                 seq = seq_dict[col_data[name_col]]
-                seq.xprs[label] = round(float(col_data[value_col]), 3)
+                seq.xprs_tpm[label] = round(float(col_data[tpm_col]), 3)
+                seq.xprs_count[label] = round(float(col_data[count_col]), 3)
         
     return
     
@@ -276,13 +279,21 @@ def generate_xprs_summary(seq_dict, component_dict, gene_dict=None):
                 component = component_dict[seq.label[label]]
             else:
                 component = gene_dict[seq.label[label]]
-            for xprs_label in seq.xprs:
-                if component.get_total_xprs(xprs_label) != 0:
-                    seq.contribute_xprs[xprs_label][label] = round(seq.xprs[xprs_label] / component.get_total_xprs(xprs_label), 3)
-                    seq.relative_xprs[xprs_label][label] = round(seq.xprs[xprs_label] / component.get_maximum_xprs(xprs_label), 3)
+            for xprs_label in seq.xprs_tpm:
+                if component.get_total_xprs('tpm', xprs_label) != 0:
+                    seq.contribute_xprs_tpm[xprs_label][label] = round(seq.xprs_tpm[xprs_label] / component.get_total_xprs('tpm', xprs_label), 3)
+                    seq.relative_xprs_tpm[xprs_label][label] = round(seq.xprs_tpm[xprs_label] / component.get_maximum_xprs('tpm', xprs_label), 3)
                 else:
-                    seq.contribute_xprs[xprs_label][label] = 0 
-                    seq.relative_xprs[xprs_label][label] = 0
+                    seq.contribute_xprs_tpm[xprs_label][label] = 0 
+                    seq.relative_xprs_tpm[xprs_label][label] = 0
+                    
+            for xprs_label in seq.xprs_count:
+                if component.get_total_xprs('count', xprs_label) != 0:
+                    seq.contribute_xprs_count[xprs_label][label] = round(seq.xprs_count[xprs_label] / component.get_total_xprs('count', xprs_label), 3)
+                    seq.relative_xprs_count[xprs_label][label] = round(seq.xprs_count[xprs_label] / component.get_maximum_xprs('count', xprs_label), 3)
+                else:
+                    seq.contribute_xprs_count[xprs_label][label] = 0 
+                    seq.relative_xprs_count[xprs_label][label] = 0
     return
 
 def generate_report(input_file, data_dict, data, target=None, xprs_label=None):
@@ -302,20 +313,30 @@ def generate_report(input_file, data_dict, data, target=None, xprs_label=None):
                 if i == 0:
                     header.append(target + '_tr_' + metric)
             
-            for xprs_label in sorted(seq.xprs.keys()):
-                output_field.append(seq.xprs[xprs_label])
+            for xprs_label in sorted(seq.xprs_tpm.keys()):
+                output_field.append(seq.xprs_tpm[xprs_label])
                 if i == 0:
-                    header.append(target + '_xprs_' + xprs_label)
+                    header.append(target + '_xprs_tpm_' + xprs_label)
+                    
+            for xprs_label in sorted(seq.xprs_count.keys()):
+                output_field.append(seq.xprs_count[xprs_label])
+                if i == 0:
+                    header.append(target + '_xprs_count_' + xprs_label)
                
             for label in sorted(seq.label.keys(), reverse=True):
                 output_field.append(seq.label[label])
                 if i == 0:
                     header.append(target + '_' + label)
-                for xprs_label in sorted(seq.xprs):
-                    output_field.extend([seq.contribute_xprs[xprs_label][label], seq.relative_xprs[xprs_label][label]])
+                for xprs_label in sorted(seq.xprs_tpm):
+                    output_field.extend([seq.contribute_xprs_tpm[xprs_label][label], seq.relative_xprs_tpm[xprs_label][label]])
                     if i == 0:
-                        header.extend([target + '_' + label + '_contribute_xprs_' + xprs_label,
-                                       target + '_' + label + '_relative_xprs_' + xprs_label])
+                        header.extend([target + '_' + label + '_contribute_xprs_tpm_' + xprs_label,
+                                       target + '_' + label + '_relative_xprs_tpm_' + xprs_label])
+                for xprs_label in sorted(seq.xprs_count):
+                    output_field.extend([seq.contribute_xprs_count[xprs_label][label], seq.relative_xprs_count[xprs_label][label]])
+                    if i == 0:
+                        header.extend([target + '_' + label + '_contribute_xprs_count_' + xprs_label,
+                                       target + '_' + label + '_relative_xprs_count_' + xprs_label])
             
             table.append(output_field)
     elif data in ['component', 'gene']:
@@ -325,14 +346,15 @@ def generate_report(input_file, data_dict, data, target=None, xprs_label=None):
             output_field.extend([component.name, len(component.member)])
             if i == 0:
                 header.extend([target + '_' + data, target + '_' + data + '_size'])
-            for label in sorted(component.member_xprs.keys()):
-                output_field.extend([component.get_total_xprs(label),
-                                     component.get_maximum_xprs(label),
-                                     component.get_average_xprs(label)])
-                if i == 0:
-                    header.extend([target + '_' + data + '_tot_xprs_' + label,
-                                   target + '_' + data + '_max_xprs_' + label,
-                                   target + '_' + data + '_avg_xprs_' + label])
+            for metric in ['tpm', 'count']:
+                for label in sorted(component.xprs_tpm.keys()):
+                    output_field.extend([component.get_total_xprs(metric, label),
+                                         component.get_maximum_xprs(metric, label),
+                                         component.get_average_xprs(metric, label)])
+                    if i == 0:
+                        header.extend([target + '_' + data + '_tot_xprs_' + metric + '_' + label,
+                                       target + '_' + data + '_max_xprs_' + metric + '_' + label,
+                                       target + '_' + data + '_avg_xprs_' + metric + '_' + label])
             table.append(output_field)
             
     elif data == 'match':
@@ -361,6 +383,16 @@ def merge_report(input_file, target,
     elif target == 'match':
         merge_df = pd.merge(match_df, contig_merge_df, on='contig_name', how='inner')
         merge_df = pd.merge(merge_df, ref_merge_df, on='ref_name', how='inner')
+        merge_df['length_difference'] = (merge_df['contig_length'] - merge_df['ref_length']) / (merge_df['contig_length'] + merge_df['ref_length']) * 100
+        for label in input_file['contig_xprs_label']:
+            merge_df['xprs_tpm_error_' + label] = (merge_df['contig_xprs_tpm_' + label] - merge_df['ref_xprs_tpm_answer']) / \
+                                                  (merge_df['contig_xprs_tpm_' + label] + merge_df['ref_xprs_tpm_answer']) * 100
+            merge_df['xprs_tpm_error_' + label] =merge_df['xprs_tpm_error_' + label].fillna(value=0)
+           
+            merge_df['xprs_count_error_' + label] = (merge_df['contig_xprs_count_' + label] - merge_df['ref_xprs_count_answer']) / \
+                                                    (merge_df['contig_xprs_count_' + label] + merge_df['ref_xprs_count_answer']) * 100
+            merge_df['xprs_count_error_' + label] =merge_df['xprs_count_error_' + label].fillna(value=0)
+        
         merge_df.to_csv(input_file['output_dir'] + '/match.tsv', sep='\t', index=False)
     
     return merge_df

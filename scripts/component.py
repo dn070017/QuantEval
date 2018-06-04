@@ -8,23 +8,36 @@ class Component:
         self.name = name
         self.size = 0
         self.member = list()
-        self.member_xprs = defaultdict(list)
+        self.xprs_tpm = defaultdict(list)
+        self.xprs_count = defaultdict(list)
 
     def add_member(self, seq):
         self.member.append(seq)
         self.size += 1
         
-        for xprs_label in seq.xprs:
-            self.member_xprs[xprs_label].append(seq.xprs[xprs_label])
+        for xprs_label in seq.xprs_tpm:
+            self.xprs_tpm[xprs_label].append(seq.xprs_tpm[xprs_label])
+            
+        for xprs_label in seq.xprs_count:
+            self.xprs_count[xprs_label].append(seq.xprs_count[xprs_label])
         
-    def get_maximum_xprs(self, label):
-        return round(np.amax(self.member_xprs[label]), 3)
+    def get_maximum_xprs(self, metric, label):
+        if metric == 'tpm':
+            return round(np.amax(self.xprs_tpm[label]), 3)
+        elif metric == 'count':
+            return round(np.amax(self.xprs_count[label]), 3)
     
-    def get_total_xprs(self, label):
-        return round(np.sum(self.member_xprs[label]), 3)
+    def get_total_xprs(self, metric, label):
+        if metric == 'tpm':
+            return round(np.sum(self.xprs_tpm[label]), 3)
+        elif metric == 'count':
+            return round(np.sum(self.xprs_count[label]), 3)
     
-    def get_average_xprs(self, label):
-        return round(np.average(self.member_xprs[label]), 3)
+    def get_average_xprs(self, metric, label):
+        if metric == 'tpm':
+            return round(np.average(self.xprs_tpm[label]), 3)
+        elif metric == 'count':
+            return round(np.average(self.xprs_count[label]), 3)
     
     def __hash__(self):
         return hash(self.name)
