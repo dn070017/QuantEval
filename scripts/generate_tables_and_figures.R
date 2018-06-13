@@ -11,7 +11,7 @@ cat('- setup parameters\n')
     dir.create('tables', showWarnings=F, recursive=T)
     dir.create('figures', showWarnings=F, recursive=T)
     dataset_list <- c('simulation', 'real')
-    dataset_label_list <- c('Simulation', 'Experimental')
+    dataset_label_list <- c('Simulated', 'Experimental')
     species_list <- c('yeast', 'dog', 'mouse')
     species_label_list <- c('Yeast', 'Dog', 'Mouse')
     assembly_list <- c('rnaspades', 'transabyss', 'trinity')
@@ -24,9 +24,9 @@ cat('- setup parameters\n')
     stage <- 1
     no_table <- 1
     no_figure <- 1
-    width <- 5500
-    height <- 5000
-    res <- 500
+    width <- 1650
+    height <- 1500
+    res <- 150
 }
 cat('- stage', stage, 'reading data\n')
 {
@@ -197,7 +197,7 @@ cat('- stage', stage, 'generate contig summary\n')
             }
         }
     }
-    figure_list[[1]] <- return_barplot(alignment_summary, 'species', 'correct', 'assembly', y_label='Proportion of Correct Contigs', legend_title='Assembly')
+    figure_list[[1]] <- return_barplot(alignment_summary, 'species', 'correct', 'assembly', y_label='Proportion of Accurate Contigs', legend_title='Assembly')
     figure_list[[2]] <- return_barplot(alignment_summary, 'species', 'recover', 'assembly', y_label='Proportion of Recovered Transcripts', legend_title='Assembly')
     figure_list[[3]] <- return_barplot(transrate, 'species', 'score', 'assembly', y_label='Overall Score', legend_title='Assembly')
     figure_list[[4]] <- return_barplot(transrate, 'species', 'bases_covered', 'assembly', range=c(0.75, 1), y_label='Bases Covered', legend_title='Assembly')
@@ -257,12 +257,12 @@ cat('- stage', stage, 'generate contig correlation matrix\n')
                         i <- i + 1
                     }
                 }
+                jpeg(paste0('figures/figure_', no_figure, '_contigs_cormatrix_', dataset_label, '_', metric, '_', method, '.jpeg'), width=width, height=height, res=res)
+                grid_arrange_shared_legend(figure_list[[1]], figure_list[[4]], figure_list[[7]],
+                                           figure_list[[2]], figure_list[[5]], figure_list[[8]],
+                                           figure_list[[3]], figure_list[[6]], figure_list[[9]], ncol=3, nrow=3)
+                dev.off()
             }
-            jpeg(paste0('figures/figure_', no_figure, '_contigs_cormatrix_', dataset_label, '_', metric, '_', method, '.jpeg'), width=width, height=height, res=res)
-            grid_arrange_shared_legend(figure_list[[1]], figure_list[[4]], figure_list[[7]],
-                                       figure_list[[2]], figure_list[[5]], figure_list[[8]],
-                                       figure_list[[3]], figure_list[[6]], figure_list[[9]], ncol=3, nrow=3)
-            dev.off()
         }
     }
     rm(contig, cor_matrix, i)
@@ -337,26 +337,19 @@ cat('- stage', stage, 'generate scatter plots\n')
             }
         }
     }
-    rm(answer, xprs_label, xprs, xprs_error, max_range, y_label, y_label, X, i, j)
+    rm(answer, xprs_label, xprs, xprs_error, max_range, y_label, X, i, j)
     rm(category, dataset_label, species_label, assembly_label, figure_list)
     stage <- stage + 1
     no_figure <- no_figure + 1
 }
-cat('- stage', stage, 'generate figure error boxplot and correlation matrix (full-length, incompleteness, over-extension)\n')
+cat('- stage', stage, 'generate figure error boxplot (full-length, incompleteness, over-extension)\n')
 {
     for(metric in c('tpm', 'count')){
-        pearson <- matrix(nrow=6, ncol=9)
-        spearman <- matrix(nrow=6, ncol=9)
-        col_name <- vector(length=9)
-        row_name <- vector(length=6)
-        row_index <- 1
         for(dataset_label in dataset_label_list){
             for(species_label in species_label_list){
                 cat('    - start analyzing', dataset_label, species_label, '\n')
                 figure_list <- list()
-                row_name[row_index] <- paste(dataset_label, species_label)
                 i <- 1
-                col_index <- 1
                 for(assembly_label in assembly_label_list){
                     for(j in seq(1:3)){
                         answer <- paste0('ref_xprs_', metric, '_answer')
@@ -367,16 +360,10 @@ cat('- stage', stage, 'generate figure error boxplot and correlation matrix (ful
                         X <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
                         Y <- rbind(categorize_match(X, 'full-length'), categorize_match(X, 'over-extension'), categorize_match(X, 'incompleteness'))
                         
-                        pearson[row_index, col_index] <- round(cor(log2(Y[, answer]+1), log2(Y[, xprs]+1)), 3)
-                        spearman[row_index, col_index] <- round(cor(log2(Y[, answer]+1), log2(Y[, xprs]+1), method='spearman'), 3)
-                        col_name[col_index] <- paste(assembly_label, xprs_label)
-                        col_index <- col_index + 1
-                        
                         figure_list[[i]] <- return_boxplot(Y, 'length_difference', xprs_error, 'length_label', cut=T, breaks=seq(-100, 40, by=10), x_label='Difference in Length (%)', y_label='Relative Error (%)', title=xprs_label, subtitle=assembly_label)
                         i <- i + 1
                     }
                 }
-                row_index <- row_index + 1
                 jpeg(paste0('figures/figure_', no_figure, '_usc_error_boxplot_', dataset_label, '_', species_label, '_', metric, '.jpeg'), width=width, height=height, res=res)
                 grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], figure_list[[3]],
                                            figure_list[[4]], figure_list[[5]], figure_list[[6]],
@@ -384,108 +371,76 @@ cat('- stage', stage, 'generate figure error boxplot and correlation matrix (ful
                 dev.off()
             }
         }
-        colnames(pearson) <- col_name
-        rownames(pearson) <- row_name
-        colnames(spearman) <- col_name
-        rownames(spearman) <- row_name
-        pearson_figure <- return_cormatrix(pearson, title="Pearson's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
-        spearman_figure <- return_cormatrix(spearman, title="Spearman's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
-        
-        jpeg(paste0('figures/figure_', no_figure + 1, '_unique_alignment_cormatrix.jpeg'), width=width*1.5, height=height/1.5, res=res)
-        grid_arrange_shared_legend(pearson_figure, spearman_figure, ncol=2, nrow=1)
-        dev.off()
     }
     
-    rm(row_index, col_index, col_name, row_name, spearman, pearson, pearson_figure, spearman_figure)
+    rm(row_index, col_index, col_name, row_name)
     rm(dataset_label, species_label, assembly_label, figure_list)
     rm(answer, xprs_label, xprs, xprs_error, X, Y, i, j)
     no_figure <- no_figure + 2
     stage <- stage + 1
 }
-cat('- stage', stage, 'generate figure error boxplot and correlation matrix (family-collapse, duplication)\n')
+cat('- stage', stage, 'generate figure correlation matrix (full-length, incompleteness, over-extension)\n')
 {
     for(metric in c('tpm', 'count')){
-        for(category in c('family-collapse', 'duplication')){
-            cormatrix_index <- 1
-            pearson_figure_list <- list()
-            spearman_figure_list <- list()
-            for(dataset_label in dataset_label_list){
-                error_index <- 1
-                error_figure_list <- list()
-                pearson <- matrix(nrow=6, ncol=9)
-                spearman <- matrix(nrow=6, ncol=9)
-                row_name <- vector(length=6)
-                col_name <- vector(length=9)
-                col_index <- 1
-                for(species_label in species_label_list){
-                    cat('    - start analyzing', category, dataset_label, species_label, '\n')
-                    for(assembly_label in assembly_label_list){
-                        contig <- fetch_data(contig_dataset, dataset_label, species_label, assembly_label)
-                        ref <- fetch_data(ref_dataset, dataset_label, species_label)
-                        error_df <- data.frame()
-                        row_index <- 1
-                        for(subcategory in c('Maximum Expression', 'Maximum Alignment Score')){
-                             for(i in seq(1:3)){
-                                
-                                X <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
-                                
-                                answer <- paste0('ref_xprs_', metric, '_answer')
-                                xprs <- paste0('contig_xprs_', metric, '_', xprs_list[i])
-                                xprs_error <- paste0('xprs_', metric, '_error_', xprs_list[i])
-                                xprs_label <- xprs_label_list[i]
-                           
-                                if(category == 'family-collapse' & subcategory == 'Maximum Expression'){
-                                    X <- categorize_match(X, 'family-collapse')
-                                    X <- best_hit_filter(X, paste0('ref_component_contribute_xprs_', metric, '_answer'), on='contig_name', func=max)
-                                } else if (category == 'family-collapse' & subcategory == 'Maximum Alignment Score'){
-                                    X <- categorize_match(X, 'family-collapse')
-                                    X <- best_hit_filter(X, 'alignment_score', on='contig_name', func=max)
-                                } else if (category == 'duplication' & subcategory == 'Maximum Expression'){
-                                    X <- categorize_match(X, 'duplication')
-                                    X <- best_hit_filter(X, paste0('contig_component_contribute_xprs_', metric, '_', xprs_list[i]), on='ref_name', func=max)
-                                }  else if (category == 'duplication' & subcategory == 'Maximum Alignment Score'){
-                                    X <- categorize_match(X, 'duplication')
-                                    X <- best_hit_filter(X, 'alignment_score', on='ref_name', func=max)
-                                }
-                                X$error <- X[, xprs_error]
-                                X$xprs_label <- xprs_label
-                                X$subcategory_label <- subcategory
-                                error_df <- rbind(error_df, X[, c('xprs_label', 'error', 'subcategory_label')])
-                                pearson[row_index, col_index] <- round(cor(log2(X[, answer]+1), log2(X[, xprs]+1)), 3)
-                                spearman[row_index, col_index] <- round(cor(log2(X[, answer]+1), log2(X[, xprs]+1), method='spearman'), 3)
-                                row_name[row_index] <- paste(subcategory, xprs_label)
-                                row_index <- row_index + 1
+        i <- 1
+        figure_list <- list()
+        pdf_list <- list()
+        for(dataset_label in dataset_label_list){
+            pearson <- matrix(nrow=9, ncol=9)
+            spearman <- matrix(nrow=9, ncol=9)
+            col_name <- vector(length=9)
+            row_name <- vector(length=9)
+            row_index <- 1
+            for(species_label in species_label_list){
+                cat('    - start analyzing', dataset_label, species_label, '\n')
+                for(assembly_label in assembly_label_list){
+                    row_name[row_index] <- paste(dataset_label, species_label, assembly_label)
+                    col_index <- 1
+                    for(category in c('full-length', 'incompleteness', 'over-extension')){
+                        for(j in seq(1:3)){
+                            answer <- paste0('ref_xprs_', metric, '_answer')
+                            xprs <- paste0('contig_xprs_', metric, '_', xprs_list[j])
+                            xprs_error <- paste0('xprs_', metric, '_error_', xprs_list[j])
+                            xprs_label <- xprs_label_list[j]
+                            X <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
+                            X <- categorize_match(X, category)
+                            if(category == 'full-length'){
+                                category_label <- 'Full-length'
+                            } else if (category == 'incompleteness'){
+                                category_label <- 'Incompleteness'
+                            } else {
+                                category_label <- 'Over-extension'
                             }
+                            pearson[row_index, col_index] <- round(cor(log2(X[, answer]+1), log2(X[, xprs]+1)), 3)
+                            spearman[row_index, col_index] <- round(cor(log2(X[, answer]+1), log2(X[, xprs]+1), method='spearman'), 3)
+                            col_name[col_index] <- paste(category_label, xprs_label)
+                            col_index <- col_index + 1
                         }
-                        error_df$xprs_label = factor(error_df$xprs_label)
-                        error_figure_list[[error_index]] <- return_boxplot(error_df, 'xprs_label', 'error', 'subcategory_label', cut=F, guide_name='Selection Method', x_label='', y_label='Relative Error (%)', title=species_label, subtitle=assembly_label)
-                        error_index <- error_index + 1
-                        col_name[col_index] <- paste(species_label, assembly_label)
-                        col_index <- col_index + 1
                     }
+                    row_index <- row_index + 1
                 }
-                rownames(pearson) <- row_name
-                colnames(pearson) <- col_name
-                rownames(spearman) <- row_name
-                colnames(spearman) <- col_name
-                jpeg(paste0('figures/figure_', no_figure, '_', category, '_error_boxplot_', dataset_label, '_', metric, '.jpeg'), width=width, height=height, res=res)
-                grid_arrange_shared_legend(error_figure_list[[1]], error_figure_list[[2]], error_figure_list[[3]],
-                                           error_figure_list[[4]], error_figure_list[[5]], error_figure_list[[6]],
-                                           error_figure_list[[7]], error_figure_list[[8]], error_figure_list[[9]], ncol=3, nrow=3)
-                dev.off()
-                pearson_figure_list[[cormatrix_index]] <- return_cormatrix(pearson, title=dataset_label, subtitle="Pearson's R", legend_title="Correlation Coefficient", grid_step_v=3, grid_step_h=3)
-                spearman_figure_list[[cormatrix_index]] <- return_cormatrix(spearman, title=dataset_label, subtitle="Spearmans's R", legend_title="Correlation Coefficient", grid_step_v=3, grid_step_h=3)
-                cormatrix_index <- cormatrix_index + 1
             }
-            jpeg(paste0('figures/figure_', no_figure + 1, '_', category, '_cormatrix.jpeg'), width=width*1.5, height=height*1.5, res=res)
-            grid_arrange_shared_legend(pearson_figure_list[[1]], pearson_figure_list[[2]], spearman_figure_list[[1]], spearman_figure_list[[2]], ncol=2, nrow=2)
-            dev.off()
+            colnames(pearson) <- col_name
+            rownames(pearson) <- row_name
+            colnames(spearman) <- col_name
+            rownames(spearman) <- row_name
+            figure_list[[i]] <- return_cormatrix(pearson, title=dataset_label, subtitle="Pearson's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
+            figure_list[[i + 1]] <- return_cormatrix(spearman, title=dataset_label, subtitle="Spearman's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
+            pdf_list[[i]] <- return_cormatrix(pearson, pdf_font=T, title=dataset_label, subtitle="Pearson's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
+            pdf_list[[i + 1]] <- return_cormatrix(spearman, pdf_font=T, title=dataset_label, subtitle="Spearman's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
+            i <- i + 2
+        }
+        jpeg(paste0('figures/figure_', no_figure + 1, '_unique_alignment_cormatrix_', metric, '.jpeg'), width=width*1.5, height=height*1.5, res=res)
+        grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], figure_list[[3]], figure_list[[4]], ncol=2, nrow=2)
+        dev.off()
+        if(metric == 'tpm'){
+            ggsave(paste0('./figures/Figure 5.pdf'), grid_arrange_shared_legend(pdf_list[[1]], pdf_list[[2]], pdf_list[[3]], pdf_list[[4]], ncol=2, nrow=2), width=170, height=180, units='mm')
         }
     }
-    rm(answer, xprs_label, xprs, xprs_error, X, i, contig, ref)
-    rm(error_index, cormatrix_index, row_index, col_index, col_name, row_name)
-    rm(spearman, pearson, pearson_figure_list, spearman_figure_list)
-    rm(dataset_label, species_label, assembly_label)
+    
+    rm(row_index, col_index, col_name, row_name, spearman, pearson)
+    rm(dataset_label, species_label, assembly_label, figure_list, pdf_list)
+    rm(answer, xprs_label, xprs, xprs_error, X, Y, i, j)
     no_figure <- no_figure + 2
     stage <- stage + 1
 }
@@ -525,6 +480,374 @@ cat('- stage', stage, 'generate average alignment number for family-collapse and
     no_table <- no_table + 1
     stage <- stage + 1
 }
+cat('- stage', stage, 'generate manuscript figure error boxplot (full-length, incompleteness, over-extension)\n')
+{
+    figure_list <- list()
+    i <- 1
+    for(species_label in species_label_list){
+        answer <- paste0('ref_xprs_tpm_answer')
+        xprs <- 'contig_xprs_tpm_kallisto'
+        xprs_error <- 'xprs_tpm_error_kallisto'
+        xprs_label <- 'Kallisto'
+        
+        X <- fetch_data(match_dataset, 'Simulated', species_label, 'Trinity')
+        Y <- rbind(categorize_match(X, 'full-length'), categorize_match(X, 'over-extension'), categorize_match(X, 'incompleteness'))
+        
+        figure_list[[i]] <- return_boxplot(Y, 'length_difference', xprs_error, 'length_label', cut=T, breaks=seq(-100, 40, by=10), x_label='Difference in Length (%)', y_label='Relative Error (%)', pdf_font=T, title=species_label)
+        i <- i + 1
+    }
+    #pdf(paste0('./figures/Figure 3.pdf'), width=6.69, height=2.5)
+    ggsave(paste0('./figures/Figure 3.pdf'), grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], figure_list[[3]], ncol=3, nrow=1), width=170, height=60, units='mm')
+    #dev.off()
+    
+    rm(row_index, col_index, col_name, row_name, spearman, pearson, pearson_figure, spearman_figure)
+    rm(dataset_label, species_label, assembly_label, figure_list)
+    rm(answer, xprs_label, xprs, xprs_error, X, Y, i, j)
+    no_figure <- no_figure + 2
+    stage <- stage + 1
+}
+cat('- stage', stage, 'generate manuscript figure scatterplot boxplot (full-length, incompleteness, over-extension)\n')
+{
+    i <- 1
+    figure_list <- list()
+    for(category in c('full-length', 'incompleteness', 'over-extension')){
+        answer <- paste0('ref_xprs_tpm_answer')
+        xprs_label <- 'Kallisto'
+        xprs <- 'contig_xprs_tpm_kallisto'
+        xprs_error <- 'xprs_tpm_error_kallisto'
+        
+        X <- fetch_data(match_dataset, 'Simulated', 'Dog', 'Trinity')
+        X <- categorize_match(X, category)
+
+        if(category == 'full-length'){
+            category_label <- 'Full-length'
+        } else if (category == 'incompleteness'){
+            category_label <- 'Incompleteness'
+        } else {
+            category_label <- 'Over-extension'
+        }
+        
+        max_range <- 15
+        x_label <- 'log2(Ground Truth TPM + 1)'
+        y_label <- 'log2(Estimated TPM + 1)'
+        
+        figure_list[[i]] <- return_scatterplot(X, answer, xprs, xprs_error, pdf_font=T, x_label=x_label, y_label=y_label, max_range=max_range, title=category_label)
+        i <- i + 1            
+    }
+    #jpeg(paste0('figures/figure_', no_figure, '_', category, '_scatterplot_', dataset_label, '_', species_label, '_', metric, '.jpeg'), width=width, height=height, res=res)
+    ggsave(paste0('./figures/Figure 4.pdf'), grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], figure_list[[3]], ncol=3, nrow=1), width=170, height=65, units='mm')
+    #dev.off()
+    rm(answer, xprs_label, xprs, xprs_error, max_range, y_label, X, i, j)
+    rm(category, dataset_label, species_label, assembly_label, figure_list)
+    stage <- stage + 1
+    no_figure <- no_figure + 1
+}
+cat('- stage', stage, 'generate manuscript figure scatterplot boxplot (famiyl-collapse)\n')
+{
+    i <- 1
+    figure_list <- list()
+    for(category in c('Best Alignment Score', 'Highest Expression', 'Others')){
+        answer <- paste0('ref_xprs_tpm_answer')
+        xprs_label <- 'Kallisto'
+        xprs <- 'contig_xprs_tpm_kallisto'
+        xprs_error <- 'xprs_tpm_error_kallisto'
+        
+        X <- fetch_data(match_dataset, 'Simulated', 'Dog', 'Trinity')
+        X <- categorize_match(X, 'family-collapse')
+        
+        max_range <- 15
+        x_label <- 'log2(Ground Truth TPM + 1)'
+        y_label <- 'log2(Estimated TPM + 1)'
+        
+        Y <- best_hit_filter(X, paste0('ref_component_contribute_xprs_', metric, '_answer'), on='contig_name', func=max)
+        Z <- best_hit_filter(X, 'alignment_score', on='contig_name', func=max)
+        
+        if (category == 'Highest Expression'){
+            X <- subset(X, X$ref_name %in% Y$ref_name)
+        } else if (category == 'Best Alignment Score'){
+            X <- subset(X, X$ref_name %in% Z$ref_name)
+        } else {
+            X <- subset(X, ! X$ref_name %in% Y$ref_name & ! X$ref_name %in% Z$ref_name)
+        }
+        
+        figure_list[[i]] <- return_scatterplot(X, answer, xprs, xprs_error, pdf_font=T, x_label=x_label, y_label=y_label, max_range=max_range, title=category)
+        i <- i + 1            
+    }
+    #jpeg(paste0('figures/figure_', no_figure, '_', category, '_scatterplot_', dataset_label, '_', species_label, '_', metric, '.jpeg'), width=width, height=height, res=res)
+    ggsave(paste0('./figures/Figure 6.pdf'), grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], figure_list[[3]], ncol=3, nrow=1), width=170, height=65, units='mm')
+    #dev.off()
+    rm(answer, xprs_label, xprs, xprs_error, max_range, y_label, X, i, j)
+    rm(category, dataset_label, species_label, assembly_label, figure_list)
+    stage <- stage + 1
+    no_figure <- no_figure + 1
+}
+cat('- stage', stage, 'generate figure error boxplot and correlation matrix (family-collapse, duplication)\n')
+{
+    for(metric in c('tpm', 'count')){
+        for(category in c('family-collapse')){
+            cormatrix_index <- 1
+            pearson_figure_list <- list()
+            spearman_figure_list <- list()
+            for(dataset_label in dataset_label_list){
+                error_index <- 1
+                error_figure_list <- list()
+                pearson <- matrix(nrow=9, ncol=9)
+                spearman <- matrix(nrow=9, ncol=9)
+                row_name <- vector(length=9)
+                col_name <- vector(length=9)
+                col_index <- 1
+                for(species_label in species_label_list){
+                    cat('    - start analyzing', category, dataset_label, species_label, '\n')
+                    for(assembly_label in assembly_label_list){
+                        contig <- fetch_data(contig_dataset, dataset_label, species_label, assembly_label)
+                        ref <- fetch_data(ref_dataset, dataset_label, species_label)
+                        error_df <- data.frame()
+                        row_index <- 1
+                        for(subcategory in c('Maximum Expression and Score', 'Maximum Expression Only', 'Maximum Alignment Score Only', 'Others')){
+                             for(i in seq(1:3)){
+                                
+                                X <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
+                                X <- categorize_match(X, category)
+                                
+                                answer <- paste0('ref_xprs_', metric, '_answer')
+                                xprs <- paste0('contig_xprs_', metric, '_', xprs_list[i])
+                                xprs_error <- paste0('xprs_', metric, '_error_', xprs_list[i])
+                                xprs_label <- xprs_label_list[i]
+                           
+                                if(category == 'family-collapse'){
+                                    Y <- best_hit_filter(X, paste0('ref_component_contribute_xprs_', metric, '_answer'), on='contig_name', func=max)
+                                    Z <- best_hit_filter(X, 'alignment_score', on='contig_name', func=max)
+                                    if (subcategory == 'Maximum Expression and Score'){
+                                        X <- subset(X, X$ref_name %in% Y$ref_name & X$ref_name %in% Z$ref_name)
+                                    } else if (subcategory == 'Maximum Expression Only'){
+                                        X <- subset(X, X$ref_name %in% Y$ref_name & ! X$ref_name %in% Z$ref_name)
+                                    } else if (subcategory == 'Maximum Alignment Score Only'){
+                                        X <- subset(X, ! X$ref_name %in% Y$ref_name & X$ref_name %in% Z$ref_name)
+                                    } else {
+                                        X <- subset(X, ! X$ref_name %in% Y$ref_name & ! X$ref_name %in% Z$ref_name)
+                                    }
+                                } else {
+                                    Y <- best_hit_filter(X, paste0('ref_component_contribute_xprs_', metric, '_', xprs_list[i]), on='ref_name', func=max)
+                                    Z <- best_hit_filter(X, 'alignment_score', on='ref_name', func=max)
+                                    if (subcategory == 'Maximum Expression and Score'){
+                                        X <- subset(X, X$contig_name %in% Y$contig_name & X$contig_name %in% Z$contig_name)
+                                    } else if (subcategory == 'Maximum Expression Only'){
+                                        X <- subset(X, X$contig_name %in% Y$contig_name & ! X$contig_name %in% Z$contig_name)
+                                    } else if (subcategory == 'Maximum Alignment Score Only') {
+                                        X <- subset(X, ! X$contig_name %in% Y$contig_name & X$contig_name %in% Z$contig_name)
+                                    } else {
+                                        X <- subset(X, ! X$contig_name %in% Y$contig_name & ! X$contig_name %in% Z$contig_name)
+                                    }
+                                }
+                                if(nrow(X) > 0){
+                                    X$error <- X[, xprs_error]
+                                    X$xprs_label <- xprs_label
+                                    X$subcategory_label <- subcategory
+                                    error_df <- rbind(error_df, X[, c('xprs_label', 'error', 'subcategory_label')])
+                                    #pearson[row_index, col_index] <- round(cor(log2(X[, answer]+1), log2(X[, xprs]+1)), 3)
+                                    #spearman[row_index, col_index] <- round(cor(log2(X[, answer]+1), log2(X[, xprs]+1), method='spearman'), 3)
+                                    #row_name[row_index] <- paste(subcategory, xprs_label)
+                                    #row_index <- row_index + 1
+                                }
+                            }
+                        }
+                        error_df$xprs_label = factor(error_df$xprs_label)
+                        error_figure_list[[error_index]] <- return_boxplot(error_df, 'xprs_label', 'error', 'subcategory_label', cut=F, guide_name='Selection Method', x_label='', y_label='Relative Error (%)', title=species_label, subtitle=assembly_label)
+                        error_index <- error_index + 1
+                        #col_name[col_index] <- paste(species_label, assembly_label)
+                        #col_index <- col_index + 1
+                    }
+                }
+                #rownames(pearson) <- row_name
+                #colnames(pearson) <- col_name
+                #rownames(spearman) <- row_name
+                #colnames(spearman) <- col_name
+                jpeg(paste0('figures/figure_', no_figure, '_', category, '_error_boxplot_', dataset_label, '_', metric, '.jpeg'), width=width, height=height, res=res)
+                grid_arrange_shared_legend(error_figure_list[[1]], error_figure_list[[2]], error_figure_list[[3]],
+                                           error_figure_list[[4]], error_figure_list[[5]], error_figure_list[[6]],
+                                           error_figure_list[[7]], error_figure_list[[8]], error_figure_list[[9]], ncol=3, nrow=3)
+                dev.off()
+                #pearson_figure_list[[cormatrix_index]] <- return_cormatrix(pearson, title=dataset_label, subtitle="Pearson's R", legend_title="Correlation Coefficient", grid_step_v=3, grid_step_h=3)
+                #spearman_figure_list[[cormatrix_index]] <- return_cormatrix(spearman, title=dataset_label, subtitle="Spearmans's R", legend_title="Correlation Coefficient", grid_step_v=3, grid_step_h=3)
+                #cormatrix_index <- cormatrix_index + 1
+            }
+            #jpeg(paste0('figures/figure_', no_figure + 1, '_', category, '_cormatrix.jpeg'), width=width*1.5, height=height*1.5, res=res)
+            #grid_arrange_shared_legend(pearson_figure_list[[1]], pearson_figure_list[[2]], spearman_figure_list[[1]], spearman_figure_list[[2]], ncol=2, nrow=2)
+            #dev.off()
+        }
+    }
+    rm(answer, xprs_label, xprs, xprs_error, X, i, contig, ref)
+    rm(error_index, cormatrix_index, row_index, col_index, col_name, row_name)
+    rm(spearman, pearson, pearson_figure_list, spearman_figure_list)
+    rm(dataset_label, species_label, assembly_label)
+    no_figure <- no_figure + 2
+    stage <- stage + 1
+}
+cat('- stage', stage, 'generate figure duplication proportion of allocated reads line graph\n')
+{
+    for(category in c('duplication')){
+        for(dataset_label in dataset_label_list){
+            error_index <- 1
+            error_figure_list <- list()
+            for(species_label in species_label_list){
+                cat('    - start analyzing', category, dataset_label, species_label, '\n')
+                for(assembly_label in assembly_label_list){
+                    match <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
+                    match <- categorize_match(match, category)
+                    
+                    cumulative <- data.frame()
+                    for(i in seq(1:3)){
+                        X <- match
+                        answer <- 'ref_xprs_tpm_answer'
+                        xprs <- paste0('contig_xprs_tpm_', xprs_list[i])
+                        xprs_error <- paste0('xprs_tpm_error_', xprs_list[i])
+                        xprs_label <- xprs_label_list[i]
+                        xprs_contribute <- paste0('contig_component_contribute_xprs_count_', xprs_list[i])
+                        
+                        X <- aggregate_column(X, xprs_contribute, 'contig_component', 'max_contribute', max)
+                        
+                        X$xprs_label <- xprs_label
+                        X <- X[, c('contig_component', 'max_contribute', 'xprs_label')]
+                        
+                        cumulative <- rbind(cumulative, X)
+                    }
+                    error_figure_list[[error_index]] <- return_distribution(cumulative, 'max_contribute', 'xprs_label', title=species_label, subtitle=assembly_label)
+                    error_index <- error_index + 1
+                }
+            }
+            jpeg(paste0('figures/figure_', no_figure, '_duplication_maximum_contribution_', dataset_label, '.jpeg'), width=width, height=height, res=res)
+            grid_arrange_shared_legend(error_figure_list[[1]], error_figure_list[[2]], error_figure_list[[3]],
+                                       error_figure_list[[4]], error_figure_list[[5]], error_figure_list[[6]],
+                                       error_figure_list[[7]], error_figure_list[[8]], error_figure_list[[9]], ncol=3, nrow=3)
+            dev.off()
+        }
+    }
+    no_figure <- no_figure + 1
+    stage <- stage + 1
+}
+cat('- stage', stage, 'generate manuscript figure duplication error plot\n')
+{
+    error_index <- 1
+    figure_list <- list()
+    for(category in c('Best Alignment Score', 'Highest Estimation', 'Total Expression')){
+        match <- fetch_data(match_dataset, 'Experimental', 'Mouse', 'rnaSPAdes')
+        match <- categorize_match(match, 'duplication')
+        
+        X <- match
+        answer <- 'ref_xprs_tpm_answer'
+        xprs <- 'contig_xprs_tpm_kallisto'
+        xprs_error <- 'xprs_tpm_error_kallisto'
+        xprs_label <- 'Kallisto'
+        xprs_contribute <- paste0('contig_component_contribute_xprs_tpm_kallisto')
+        X <- aggregate_column(X, xprs_contribute, 'contig_component', 'max_contribute', max)
+        
+        if(category == 'Best Alignment Score'){
+            X <- best_hit_filter(X, 'alignment_score', on='ref_name', func=max)
+        } else if (category == 'Highest Estimation'){
+            X <- best_hit_filter(X, xprs_contribute, on='ref_name', func=max)
+        } else {
+            X <- subset(X, X[, xprs] == X[, 'contig_component_max_xprs_tpm_kallisto'])
+            xprs <- 'contig_component_tot_xprs_tpm_kallisto'
+            X[, xprs_error] <- (X[, xprs] - X[, answer]) / (X[, xprs] + X[, answer]) * 100 
+            X[is.na(X[, xprs_error]), xprs_error] <- 0 
+        }
+        figure_list[[error_index]] <- return_boxplot(X, 'max_contribute', xprs_error, 'assembly', pdf_font=T, group_color=T, cut=T, breaks=seq(0, 1, by=0.05), x_label='Proportion of Maximum Estimated Abundance', y_label='Relative Error (%)', show_guide=F, title=category)
+        error_index <- error_index + 1
+    }
+        
+    #jpeg(paste0('figures/figure_', no_figure, '_duplication_error_boxplot_on_contribution_max_xprs_', dataset_label, '_', species_label, '.jpeg'), width=width, height=height, res=res)
+    #grid.arrange(error_figure_list[[1]], error_figure_list[[2]], error_figure_list[[3]], ncol=3, nrow=3)
+    #dev.off()
+    ggsave(paste0('./figures/Figure 7.pdf'), grid.arrange(figure_list[[1]], figure_list[[2]], figure_list[[3]], ncol=3, nrow=1), width=170, height=65, units='mm')
+    stage <- stage + 1
+}
+cat('- stage', stage, 'generate figure component scatter plots\n')
+{
+    for(category in c('Best Alignment Score', 'Highest Estimation', 'Total Expression')){
+        for(dataset_label in dataset_label_list){
+            for(species_label in species_label_list){
+                i <- 1
+                figure_list <- list()
+                for(assembly_label in assembly_label_list){
+                    for(j in seq(1, 3)){
+                        xprs_label <- xprs_label_list[j]
+                        answer <- 'ref_component_max_xprs_tpm_answer'
+                        xprs_error <- paste0('xprs_tpm_error_', xprs_list[j])
+                        match <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
+                        
+                        X <- match
+                        if(category == 'Best Alignment Score'){
+                            xprs <- paste0('contig_xprs_tpm_', xprs_list[j])
+                            X <- best_hit_filter(X, 'alignment_score', on='ref_name', func=max)
+                            X <- X[, c('ref_component', 'contig_component', answer, xprs, xprs_error)]
+                            X <- X[!duplicated(X), ]
+                        } else if (category == 'Highest Estimation'){
+                            xprs <- paste0('contig_xprs_tpm_', xprs_list[j])
+                            X <- best_hit_filter(X, xprs, on='contig_component', func=max)
+                            X <- X[, c('ref_component', 'contig_component', answer, xprs, xprs_error)]
+                            X <- X[!duplicated(X), ]
+                        } else {
+                            xprs <- paste0('contig_component_tot_xprs_tpm_', xprs_list[j])
+                            X <- X[, c('ref_component', 'contig_component', answer, xprs)]
+                            X <- X[!duplicated(X), ]
+                            X[, xprs_error] <- (X[, xprs] - X[, answer]) / (X[, xprs] + X[, answer]) * 100
+                            X[is.na(X[, xprs_error]), xprs_error] <- 0
+                        }
+                        figure_list[[i]] <- return_scatterplot(X, answer, xprs, xprs_error, title=assembly_label, subtitle=xprs_label)
+                        i <- i + 1
+                    }
+                }
+                jpeg(paste0('figures/figure_', no_figure, '_test2_component_scatterplot_', dataset_label, '_', species_label, '_', category, '.jpeg'), width=width, height=height, res=res)
+                grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], figure_list[[3]],
+                                           figure_list[[4]], figure_list[[5]], figure_list[[6]],
+                                           figure_list[[7]], figure_list[[8]], figure_list[[9]], ncol=3, nrow=3)
+                dev.off()
+            }
+        }
+    }
+}
+cat('- stage', stage, 'generate manuscript figure component scatter plots\n')
+{
+    i <- 1
+    figure_list <- list()
+    for(category in c('Best Alignment Score', 'Highest Estimation')){
+        xprs_label <- 'Kallisto'
+        answer <- 'ref_component_max_xprs_tpm_answer'
+        xprs_error <- 'xprs_tpm_error_kallisto'
+        match <- fetch_data(match_dataset, 'Simulated', 'Dog', 'Trinity')
+        
+        X <- match
+        if(category == 'Best Alignment Score'){
+            xprs <- paste0('contig_xprs_tpm_', xprs_list[j])
+            X <- best_hit_filter(X, 'alignment_score', on='ref_name', func=max)
+            X <- X[, c('ref_component', 'contig_component', answer, xprs, xprs_error)]
+            X <- X[!duplicated(X), ]
+        } else if (category == 'Highest Estimation'){
+            xprs <- paste0('contig_xprs_tpm_', xprs_list[j])
+            X <- best_hit_filter(X, xprs, on='contig_component', func=max)
+            X <- X[, c('ref_component', 'contig_component', answer, xprs, xprs_error)]
+            X <- X[!duplicated(X), ]
+        } else {
+            xprs <- paste0('contig_component_tot_xprs_tpm_', xprs_list[j])
+            X <- X[, c('ref_component', 'contig_component', answer, xprs)]
+            X <- X[!duplicated(X), ]
+            X[, xprs_error] <- (X[, xprs] - X[, answer]) / (X[, xprs] + X[, answer]) * 100
+            X[is.na(X[, xprs_error]), xprs_error] <- 0
+        }
+        figure_list[[i]] <- return_scatterplot(X, answer, xprs, xprs_error, pdf_font=T, title=category)
+        i <- i + 1
+    }
+    #jpeg(paste0('figures/figure_', no_figure, '_test2_component_scatterplot_', dataset_label, '_', species_label, '_', category, '.jpeg'), width=width, height=height, res=res)
+    #grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], figure_list[[3]],
+    #                           figure_list[[4]], figure_list[[5]], figure_list[[6]],
+    #                           figure_list[[7]], figure_list[[8]], figure_list[[9]], ncol=3, nrow=3)
+    #dev.off()
+    ggsave(paste0('./figures/Figure 8.pdf'), grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], ncol=2, nrow=1), width=120, height=65, units='mm')
+}
+
+
+
+
 # DEPRECATED FUNCTION
 cat('- stage', stage, 'generate reflected expression for family-collapse and duplication\n')
 {
@@ -599,48 +922,7 @@ cat('- stage', stage, 'generate reflected expression for family-collapse and dup
     no_figure <- no_figure + 1
     stage <- stage + 1
 }
-cat('- stage', stage, 'generate figure duplication cumulative plot\n')
-{
-    for(category in c('duplication')){
-        for(dataset_label in dataset_label_list){
-            error_index <- 1
-            error_figure_list <- list()
-            for(species_label in species_label_list){
-                cat('    - start analyzing', category, dataset_label, species_label, '\n')
-                for(assembly_label in assembly_label_list){
-                    match <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
-                    match <- categorize_match(match, category)
-                    
-                    cumulative <- data.frame()
-                    for(i in seq(1:3)){
-                        X <- match
-                        answer <- 'ref_xprs_tpm_answer'
-                        xprs <- paste0('contig_xprs_tpm_', xprs_list[i])
-                        xprs_error <- paste0('xprs_tpm_error_', xprs_list[i])
-                        xprs_label <- xprs_label_list[i]
-                        xprs_contribute <- paste0('contig_component_contribute_xprs_tpm_', xprs_list[i])
-                        
-                        X <- aggregate_column(X, xprs_contribute, 'contig_component', 'max_contribute', max)
-                        
-                        X$xprs_label <- xprs_label
-                        X <- X[, c('contig_component', 'max_contribute', 'xprs_label')]
-                        
-                        cumulative <- rbind(cumulative, X)
-                    }
-                    error_figure_list[[error_index]] <- return_cumplot(cumulative, 'max_contribute', 'xprs_label', title=species_label, subtitle=assembly_label)
-                    error_index <- error_index + 1
-                }
-            }
-            jpeg(paste0('figures/figure_', no_figure, '_duplication_cumulative_contribution_', dataset_label, '.jpeg'), width=width, height=height, res=res)
-            grid_arrange_shared_legend(error_figure_list[[1]], error_figure_list[[2]], error_figure_list[[3]],
-                                       error_figure_list[[4]], error_figure_list[[5]], error_figure_list[[6]],
-                                       error_figure_list[[7]], error_figure_list[[8]], error_figure_list[[9]], ncol=3, nrow=3)
-            dev.off()
-        }
-    }
-    no_figure <- no_figure + 1
-    stage <- stage + 1
-}
+
 cat('- stage', stage, 'generate correlation matrix (duplication)\n')
 {
     for(category in c('duplication')){
@@ -721,11 +1003,11 @@ cat('- stage', stage, 'generate figure duplication cv max\n')
                     
                     for(i in seq(1:3)){
                         X <- match
-                        answer <- 'ref_xprs_answer'
-                        xprs <- paste0('contig_xprs_', xprs_list[i])
-                        xprs_error <- paste0('xprs_error_', xprs_list[i])
+                        answer <- 'ref_xprs_tpm_answer'
+                        xprs <- paste0('contig_xprs_tpm_', xprs_list[i])
+                        xprs_error <- paste0('xprs_tpm_error_', xprs_list[i])
                         xprs_label <- xprs_label_list[i]
-                        xprs_contribute <- paste0('contig_component_contribute_xprs_', xprs_list[i])
+                        xprs_contribute <- paste0('contig_component_contribute_xprs_tpm_', xprs_list[i])
                         
                         X <- best_hit_filter(X, xprs_contribute, on='ref_name', func=max)
                         
@@ -792,21 +1074,27 @@ cat('- test\n')
         figure_list <- list()
         for(species_label in species_label_list){
             for(j in seq(1, 3)){
-                xprs <- paste0('ref_xprs_', xprs_list[j])
+                xprs <- paste0('contig_component_tot_xprs_tpm_', xprs_list[j])
+                #xprs <- paste0('contig_xprs_', xprs_list[j])
                 xprs_label <- xprs_label_list[j]
-                answer <- 'ref_xprs_answer'
-                xprs_error <- paste0('transcript_xprs_error_', xprs_list[j])
-                ref <- fetch_data(ref_dataset, dataset_label, species_label)
+                answer <- 'ref_component_max_xprs_tpm_answer'
+                #answer <- 'ref_xprs_answer'
+                xprs_error <- paste0('transcript_xprs_tpm_error_', xprs_list[j])
+                #xprs_error <- paste0('xprs_error_', xprs_list[j])
+                match <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
+                X <- match
                 
-                X <- subset(ref, ref$ref_xprs_answer != ref$ref_component_max_xprs_answer)
-                X[, xprs_error] <- (X[, xprs] - X[, answer]) / (X[, xprs] + X[, answer]) * 100 
-                X[is.na(X[, xprs_error]), xprs_error] <- 0 
+                #X <- subset(X, X$length_label == 'Full-length')
+                X <- X[, c('ref_component', 'contig_component', answer, xprs)]
+                X <- X[!duplicated(X), ]
+                X[, xprs_error] <- (X[, xprs] - X[, answer]) / (X[, xprs] + X[, answer]) * 100
+                X[is.na(X[, xprs_error]), xprs_error] <- 0
                 
                 figure_list[[i]] <- return_scatterplot(X, answer, xprs, xprs_error, title=species_label, subtitle=xprs_label)
                 i <- i + 1
             }
         }
-        jpeg(paste0('figures/figure_', no_figure, '_scatterplot_', dataset_label, '.jpeg'), width=width, height=height, res=res)
+        jpeg(paste0('figures/figure_', no_figure, '_test_component_scatterplot_', dataset_label, '_', species_label, '.jpeg'), width=width, height=height, res=res)
         grid_arrange_shared_legend(figure_list[[1]], figure_list[[2]], figure_list[[3]],
                                    figure_list[[4]], figure_list[[5]], figure_list[[6]],
                                    figure_list[[7]], figure_list[[8]], figure_list[[9]], ncol=3, nrow=3)
@@ -821,12 +1109,12 @@ cat('- test 2\n')
             figure_list <- list()
             for(assembly_label in assembly_label_list){
                 for(j in seq(1, 3)){
-                    xprs <- paste0('contig_component_tot_xprs_', xprs_list[j])
+                    xprs <- paste0('contig_component_tot_xprs_tpm_', xprs_list[j])
                     #xprs <- paste0('contig_xprs_', xprs_list[j])
                     xprs_label <- xprs_label_list[j]
-                    answer <- 'ref_component_tot_xprs_answer'
+                    answer <- 'ref_component_max_xprs_tpm_answer'
                     #answer <- 'ref_xprs_answer'
-                    xprs_error <- paste0('transcript_xprs_error_', xprs_list[j])
+                    xprs_error <- paste0('transcript_xprs_tpm_error_', xprs_list[j])
                     #xprs_error <- paste0('xprs_error_', xprs_list[j])
                     match <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
                     X <- match

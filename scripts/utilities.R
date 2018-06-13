@@ -144,7 +144,7 @@ grid_arrange_shared_legend <- function(..., ncol=length(list(...)), nrow = 1, po
     grid.draw(combined)
     invisible(combined)
 }
-return_boxplot <- function(X, x, y, color, group_color=F, cut=T, breaks=seq(-100, 100, by=10), max_range=c(-100, 100), guide_name='Categories', show_guide=T, x_label='', y_label='', title='', subtitle=''){
+return_boxplot <- function(X, x, y, color, pdf_font=F, group_color=F, cut=T, breaks=seq(-100, 100, by=10), max_range=c(-100, 100), guide_name='Categories', show_guide=T, x_label='', y_label='', title='', subtitle=''){
     X$x <- X[, x]
     X$y <- X[, y]
     X$color <- factor(X[, color])
@@ -168,8 +168,15 @@ return_boxplot <- function(X, x, y, color, group_color=F, cut=T, breaks=seq(-100
         X$color <- X$group
     }
     
+    lwd <- 0.75
+    outlier_size <- 1.5
+    if(pdf_font){
+        lwd <- 0.3 
+        outlier_size <- 0.75
+    }
+    
     figure <- ggplot(X, aes(x=group, y=y, fill=color, color=color)) + xlab(x_label) + ylab(y_label) +
-              geom_hline(color='lightpink', yintercept=0, linetype=2) + geom_boxplot(notch=FALSE, outlier.shape=16, outlier.alpha=0.5, alpha=0.5) +
+              geom_hline(color='lightpink', yintercept=0, linetype=2) + geom_boxplot(notch=FALSE, outlier.shape=16, outlier.alpha=0.5, alpha=0.5, outlier.size=outlier_size, lwd=lwd) +
               scale_color_manual(values=colors, guide=F) +
               labs(title=title, subtitle=subtitle) + guides(fill=guides(title.position='top', title.hjust=0.5))+
               theme(axis.line=element_line(colour='black'), panel.grid.major=element_blank(),
@@ -181,16 +188,27 @@ return_boxplot <- function(X, x, y, color, group_color=F, cut=T, breaks=seq(-100
     } else {
         figure <- figure + scale_fill_manual(values=colors, name=guide_name, guide=F)
     }
+    if(pdf_font){
+        figure <- figure + theme(text=element_text(size=6))
+    }
     
     return(figure)
 }
-return_cormatrix <- function(X, legend_title="Pearson's r", limit=c(0, 1), title='', subtitle='', grid_step_v=1, grid_step_h=1){
+return_cormatrix <- function(X, pdf_font=F, legend_title="Pearson's r", limit=c(0, 1), title='', subtitle='', grid_step_v=1, grid_step_h=1){
     M <- X
     X <- melt(X, na.rm=T)
+    text_size <- 4
+    barheight <- 0.5
+    barwidth <- 15
+    if(pdf_font == T){
+        text_size <- 1.5
+        barheight <- 0.25
+        barwidth <- 7.5
+    }
     figure <- ggplot(X, aes(Var2, Var1, fill=value)) + labs(title=title, subtitle=subtitle) +
-              geom_tile(alpha=0.9) + geom_text(aes(Var2, Var1, label=value), color = "white", size = 4) +
+              geom_tile(alpha=0.9) + geom_text(aes(Var2, Var1, label=value), color = "white", size=text_size) +
               scale_fill_gradient(low="#0091ff", high = "#f0650e", limit=limit, space = "Lab", name=legend_title) +
-              guides(fill=guide_colorbar(title.position='top', title.hjust=0.5, ticks=F, raster=F, barheight=0.5, barwidth=15, override.aes=list(alpha=0.5))) +
+              guides(fill=guide_colorbar(title.position='top', title.hjust=0.5, ticks=F, raster=F, barheight=barheight, barwidth=barwidth, override.aes=list(alpha=0.5))) +
               theme(axis.text.x=element_text(angle=45, vjust=1, hjust=1), axis.title.x=element_blank(), axis.title.y=element_blank(),
                     panel.grid.major=element_line(colour='gainsboro'), panel.border=element_blank(), panel.background=element_blank()) +
               coord_fixed() + 
@@ -198,9 +216,12 @@ return_cormatrix <- function(X, legend_title="Pearson's r", limit=c(0, 1), title
               geom_hline(yintercept=seq(1, ncol(M), grid_step_h)-0.5, colour="white", size=1.5) + 
               geom_vline(xintercept=seq(1, ncol(M))-0.5, colour="white", size=0.5) +
               geom_hline(yintercept=seq(1, ncol(M))-0.5, colour="white", size=0.5)  
+    if(pdf_font){
+        figure <- figure + theme(text=element_text(size=6))
+    }
     return(figure)
 }
-return_scatterplot <- function(X, x='x', y='y', z='', shape=1, correlation=T, legend_title='Relative Error (%)', axis_breaks=c(0, 5, 10, 15, 20), diagonal=T, x_label='log2(Ground Truth TPM + 1)', y_label='log2(Estimated TPM + 1)', max_range=15, title='', subtitle=''){
+return_scatterplot <- function(X, x='x', y='y', z='', pdf_font=F, shape=1, correlation=T, legend_title='Relative Error (%)', axis_breaks=c(0, 5, 10, 15, 20), diagonal=T, x_label='log2(Ground Truth TPM + 1)', y_label='log2(Estimated TPM + 1)', max_range=15, title='', subtitle=''){
     
     X$x <- log2(X[, x] + 1)
     X$y <- log2(X[, y] + 1)
@@ -212,12 +233,20 @@ return_scatterplot <- function(X, x='x', y='y', z='', shape=1, correlation=T, le
         subtitle = paste0(subtitle, "\nPearsons'r: ", pearsons, ", Spearman's r: ", spearman)
     }
     
+    point_size <- 3
+    barheight <- 0.5
+    barwidth <- 15
+    if(pdf_font == T){
+        point_size <- 1
+        barheight <- 0.25
+        barwidth <- 7.5
+    }
     figure <- ggplot(X, aes(x=x, y=y, colour=z))
-    figure <- figure + geom_point(alpha=0.5, shape=shape, size=3) + xlab(x_label) + ylab(y_label) +
+    figure <- figure + geom_point(alpha=0.5, shape=shape, size=point_size) + xlab(x_label) + ylab(y_label) +
               labs(title=title, subtitle=subtitle) + geom_rug(alpha=0.5, show.legend=F) +
               scale_colour_gradientn(colours=colorRampPalette(c("#0091ff", "#f0650e"))(100), limits=c(-100, 100), name=legend_title) +
               scale_x_continuous(breaks=axis_breaks) + scale_y_continuous(breaks=axis_breaks) +
-              guides(colour=guide_colorbar(title.position='top', title.hjust=0.5, ticks=F, raster=F, barheight=0.5, barwidth=15, override.aes=list(alpha=0.5)),
+              guides(colour=guide_colorbar(title.position='top', title.hjust=0.5, ticks=F, raster=F, barheight=barheight, barwidth=barwidth, override.aes=list(alpha=0.5)),
               shape=guide_legend(title.position='top', title.hjust=0.5)) +
               theme(axis.line=element_line(colour='black'), panel.grid.major=element_line(colour='gainsboro'), 
                     panel.border=element_blank(), panel.background=element_blank())
@@ -225,6 +254,9 @@ return_scatterplot <- function(X, x='x', y='y', z='', shape=1, correlation=T, le
         figure <- figure + coord_cartesian(xlim=c(0, max_range), ylim=c(0, max_range)) + 
                   geom_abline(intercept=0, slope=1, col='lightpink', linetype=1)
     }  
+    if(pdf_font){
+        figure <- figure + theme(text=element_text(size=6))
+    }
     
     return(figure)
 }
@@ -247,15 +279,21 @@ return_barplot <- function(X, x, y, color, range=c(0, 1), x_label='', y_label=''
     return(figure)
     
 }
-return_cumplot <- function(X, x, color, x_label='Proportion of Max. Estimated Abundance', y_label='Cumulative Frequency', range=c(0, 1), title='', subtitle=''){
+return_distribution <- function(X, x, color, legend_title='Quantifier', x_label='Highest Read Proportion (N)', y_label='C.C with H.R.P > N', range=c(0, 1), title='', subtitle=''){
     X$x <- X[, x]
     X$color <- factor(X[, color])
-    figure <- ggplot(X, aes(x=x, colour=color)) + stat_ecdf(geom='step', pad=F)  +
-              #geom_line(aes(y=1 - ..y..), stat='ecdf') +
+    
+    colors <- colorRampPalette(c("#0091ff", "#f0650e"))(length(levels(X$color)))
+    names(colors) <- levels(X$color)
+    
+    figure <- ggplot(X, aes(x=x, colour=color)) + geom_line(aes(y = 1 - ..y..), stat='ecdf') + 
               xlab(x_label) + ylab(y_label) + labs(title=title, subtitle=subtitle) +
+              scale_colour_manual(values=colors, name=legend_title) +
               theme(axis.line=element_line(colour='black'), panel.grid.major=element_blank(),
                     panel.border=element_blank(), panel.background=element_blank(),
                     axis.text.x=element_text(angle=45, hjust=1)) + 
+              scale_x_continuous(expand=c(0, 0), limits=range) +
+              scale_y_continuous(expand=c(0, 0), limits=c(0, 1))
               coord_cartesian(xlim=range)
     return(figure)
 }
