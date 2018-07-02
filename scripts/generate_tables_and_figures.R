@@ -144,7 +144,7 @@ cat('- stage', stage, 'generate contig summary\n')
             for(assembly_label in assembly_label_list){
                 match <- fetch_data(match_dataset, dataset_label, species_label, assembly_label)
                 contig <- fetch_data(contig_dataset, dataset_label, species_label, assembly_label)
-                ref <- fetch_data(ref_dataset, 'Simulation', species_label)
+                ref <- fetch_data(ref_dataset, 'Simulated', species_label)
                 
                 label <- paste(dataset_label, species_label)
                 
@@ -159,7 +159,7 @@ cat('- stage', stage, 'generate contig summary\n')
                 
                 contig_best_hit <- best_hit_filter(match, 'accuracy', on='contig_name', func=max)
                 transcript_best_hit <- best_hit_filter(match, 'recovery', on='ref_name', func=max)
-                correct <- subset(contig_best_hit, contig_best_hit$accuracy >= score_threshold)
+                accurate <- subset(contig_best_hit, contig_best_hit$accuracy >= score_threshold)
                 recover <- subset(transcript_best_hit, transcript_best_hit$recovery >= score_threshold)
                 
                 X <- data.frame(dataset=dataset_label, species=species_label, transcript=prettyNum(nrow(ref), big.mark=num_mark),
@@ -170,7 +170,7 @@ cat('- stage', stage, 'generate contig summary\n')
                                 maximum_no_contigs_in_cluster=prettyNum(max(component$contig_component_size), big.mark=num_mark),
                                 N50_contig_length=prettyNum(calc_N50(contig$contig_length), big.mark=num_mark),
                                 aligned_contig=prettyNum(length(unique(match$contig_name)), big.mark=num_mark), 
-                                correct_contig=prettyNum(length(unique(correct$contig_name)), big.mark=num_mark), 
+                                accurate_contig=prettyNum(length(unique(accurate$contig_name)), big.mark=num_mark), 
                                 aligned_transcript=prettyNum(length(unique(match$ref_name)), big.mark=num_mark), 
                                 recover_transcript=prettyNum(length(unique(recover$ref_name)), big.mark=num_mark))
                 contig_summary <- rbind(contig_summary, X)
@@ -184,7 +184,7 @@ cat('- stage', stage, 'generate contig summary\n')
                 contig_category <- rbind(contig_category, X)
                 
                 X <- data.frame(dataset=dataset_label, species=label, assembly=assembly_label, 
-                                correct=round(nrow(correct)/nrow(contig), 3), recover=round(nrow(recover)/nrow(ref), 3))
+                                accurate=round(nrow(accurate)/nrow(contig), 3), recover=round(nrow(recover)/nrow(ref), 3))
                 alignment_summary <- rbind(alignment_summary, X)
                 
                 X <- data.frame(dataset=dataset_label, species=label, assembly=assembly_label,
@@ -197,7 +197,7 @@ cat('- stage', stage, 'generate contig summary\n')
             }
         }
     }
-    figure_list[[1]] <- return_barplot(alignment_summary, 'species', 'correct', 'assembly', y_label='Proportion of Accurate Contigs', legend_title='Assembly')
+    figure_list[[1]] <- return_barplot(alignment_summary, 'species', 'accurate', 'assembly', y_label='Proportion of Accurate Contigs', legend_title='Assembly')
     figure_list[[2]] <- return_barplot(alignment_summary, 'species', 'recover', 'assembly', y_label='Proportion of Recovered Transcripts', legend_title='Assembly')
     figure_list[[3]] <- return_barplot(transrate, 'species', 'score', 'assembly', y_label='Overall Score', legend_title='Assembly')
     figure_list[[4]] <- return_barplot(transrate, 'species', 'bases_covered', 'assembly', range=c(0.75, 1), y_label='Bases Covered', legend_title='Assembly')
@@ -218,7 +218,7 @@ cat('- stage', stage, 'generate contig summary\n')
     write.table(contig_category, paste0('./tables/table_', no_table, '_contig_category.tsv'), sep='\t', row.names=F, quote=F)
     no_table <- no_table + 1
     
-    rm(ref, match, contig, component, X, contig_best_hit, transcript_best_hit, correct, recover)
+    rm(ref, match, contig, component, X, contig_best_hit, transcript_best_hit, accurate, recover)
     rm(full_length, over_extension, incompleteness, family_collapse, duplication)
     rm(dataset_label, species_label, assembly_label, label, figure_list)
     stage <- stage + 1
@@ -424,10 +424,10 @@ cat('- stage', stage, 'generate figure correlation matrix (full-length, incomple
             rownames(pearson) <- row_name
             colnames(spearman) <- col_name
             rownames(spearman) <- row_name
-            figure_list[[i]] <- return_cormatrix(pearson, title=dataset_label, subtitle="Pearson's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
-            figure_list[[i + 1]] <- return_cormatrix(spearman, title=dataset_label, subtitle="Spearman's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
-            pdf_list[[i]] <- return_cormatrix(pearson, pdf_font=T, title=dataset_label, subtitle="Pearson's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
-            pdf_list[[i + 1]] <- return_cormatrix(spearman, pdf_font=T, title=dataset_label, subtitle="Spearman's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3)
+            figure_list[[i]] <- return_cormatrix(pearson, title=dataset_label, subtitle="Pearson's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3, limit=c(0.4, 1))
+            figure_list[[i + 1]] <- return_cormatrix(spearman, title=dataset_label, subtitle="Spearman's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3, limit=c(0.4, 1))
+            pdf_list[[i]] <- return_cormatrix(pearson, pdf_font=T, title=dataset_label, subtitle="Pearson's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3, limit=c(0.4, 1))
+            pdf_list[[i + 1]] <- return_cormatrix(spearman, pdf_font=T, title=dataset_label, subtitle="Spearman's R", legend_title="Correlation Coefficient", grid_step_h=3, grid_step_v=3, limit=c(0.4, 1))
             i <- i + 2
         }
         jpeg(paste0('figures/figure_', no_figure + 1, '_unique_alignment_cormatrix_', metric, '.jpeg'), width=width*1.5, height=height*1.5, res=res)
