@@ -1,5 +1,7 @@
 library('gridExtra')
 library('grid')
+library('stats')
+library('tidyverse')
 
 aggregate_column <- function(X, target, on_which_column, new_name, fun){
     X$target <- X[, target]
@@ -279,14 +281,42 @@ return_barplot <- function(X, x, y, color, range=c(0, 1), x_label='', y_label=''
     return(figure)
     
 }
-return_distribution <- function(X, x, color, legend_title='Quantifier', x_label='Highest Read Proportion (N)', y_label='C.C with H.R.P > N', range=c(0, 1), title='', subtitle=''){
+return_distribution <- function(X, x, color, legend_title='Quantifier', x_label='Highest Expression Proportion (N)', y_label='C.C with H.R.P > N', range=c(0, 1), title='', subtitle=''){
     X$x <- X[, x]
     X$color <- factor(X[, color])
     
     colors <- colorRampPalette(c("#0091ff", "#f0650e"))(length(levels(X$color)))
     names(colors) <- levels(X$color)
     
-    figure <- ggplot(X, aes(x=x, colour=color)) + geom_line(aes(y = 1 - ..y..), stat='ecdf') + 
+    #kallisto <- subset(X, X$color == 'Kallisto')
+    #rsem <- subset(X, X$color == 'RSEM')
+    #salmon <- subset(X, X$color == 'Salmon')
+    
+    # kallisto_e <- ecdf(kallisto$x)
+    # rsem_e <- ecdf(rsem$x)
+    # salmon_e <- ecdf(salmon$x)
+    # 
+    # average_y <- mean(c(1-kallisto_e(0.75), 1-rsem_e(0.75), 1-salmon_e(0.75)))
+    # 
+    # for(x in seq(0, 1, 0.05)) {
+    #     cat(kallisto_e(x), '\n')
+    # }
+    
+    dens = split(X, X$color) %>% 
+        map_df(function(d) {
+            dens <- density(d$x, adjust=0.1, from=min(X$x) - 0.05*diff(range(X$x)), 
+                           to=max(X$x) + 0.05*diff(range(X$x)))
+            data.frame(x=dens$x, y=dens$y, cd=1-cumsum(dens$y)/sum(dens$y), group=d$color[1])
+        })
+    
+    average <- dens$cd[min(which(dens$x >= 0.75))]
+    
+    figure <- ggplot() + #ggplot(X, aes(x=x, colour=color)) + #geom_line(aes(y=1-..y..), stat='ecdf') +
+              #stat_ecdf(data=X, aes(x, colour=color), alpha=0.8, lty="11") + 
+              geom_line(data=dens, aes(x, cd, colour=group)) +
+              geom_vline(xintercept=0.75, color='lightpink', linetype=2) + 
+              geom_hline(yintercept=average, color='lightpink', linetype=2) +
+              annotate("text", label=as.character(round(average, 3)), x=0.07, y=average-0.05, size=3, colour = "lightpink") +
               xlab(x_label) + ylab(y_label) + labs(title=title, subtitle=subtitle) +
               scale_colour_manual(values=colors, name=legend_title) +
               theme(axis.line=element_line(colour='black'), panel.grid.major=element_blank(),
