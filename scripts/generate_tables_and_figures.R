@@ -3,7 +3,7 @@ library('ggplot2')
 library('reshape2')
 
 source('/Users/Hsieh/Google 雲端硬碟/utilities.R')
-source('utilities.R')
+#source('utilities.R')
 
 cat('- setup parameters\n')
 {
@@ -738,7 +738,7 @@ cat('- stage', stage, 'generate manuscript figure duplication error plot\n')
         xprs <- 'contig_xprs_tpm_kallisto'
         xprs_error <- 'xprs_tpm_error_kallisto'
         xprs_label <- 'Kallisto'
-        xprs_contribute <- paste0('contig_component_contribute_xprs_tpm_kallisto')
+        xprs_contribute <- paste0('contig_component_contribute_xprs_count_kallisto')
         X <- aggregate_column(X, xprs_contribute, 'contig_component', 'max_contribute', max)
         
         if(category == 'Best Alignment Score'){
