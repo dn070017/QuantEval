@@ -281,7 +281,7 @@ return_barplot <- function(X, x, y, color, range=c(0, 1), x_label='', y_label=''
     return(figure)
     
 }
-return_distribution <- function(X, x, color, legend_title='Quantifier', x_label='Highest Expression Proportion (N)', y_label='C.C with H.R.P > N', range=c(0, 1), title='', subtitle=''){
+return_distribution <- function(X, x, color, legend_title='Quantifier', x_label='RPEA Threshold (t)', y_label='Component w/ Maximum RPEA > t', range=c(0, 1), title='', subtitle=''){
     X$x <- X[, x]
     X$color <- factor(X[, color])
     
