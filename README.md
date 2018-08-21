@@ -1,8 +1,8 @@
  # QuantEval
  ## About
- QuantEval is an analsis pipeline which evaluate the reliability of quantification tools. There are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode built relations between contigs and reference transcripts.
+ QuantEval is an analysis pipeline which evaluate the reliability of quantification tools. There are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode built relations between contigs and reference transcripts.
  ## Reference
- > Ping-Han Hsieh, Yen-Jen Oyang and Chien-Yu Chen. Effect of de novo transcriptome assembly on quality of read mapping and transcript quantification. 2018, bioRxiv 380998.
+ > Ping-Han Hsieh, Yen-Jen Oyang and Chien-Yu Chen. Effect of de novo transcriptome assembly on transcript quantification. 2018, bioRxiv 380998.
  ## Manual
  - Run all the analysis in the study:
  ```shell
