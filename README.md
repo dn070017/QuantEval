@@ -3,10 +3,20 @@
  QuantEval is an analysis pipeline which evaluate the reliability of quantification tools. There are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode built relations between contigs and reference transcripts.
  ## Reference
  > Ping-Han Hsieh, Yen-Jen Oyang and Chien-Yu Chen. Effect of de novo transcriptome assembly on transcript quantification. 2018, bioRxiv 380998.
+ ## Requirement
+ - QuantEval main program:
+    - Python3 (3.5.2)
+    - Python packages: pandas (0.20.3), numpy (1.12.1)
+ - Generate figures and table:
+    - R (3.3.0)
+    - R pacakges: gridExtra, grid, stats, tidyverse, plyr, ggplot2, reshape2
+ - Utilities:
+    - Bowtie2 (2.3.0), BLASTn (2.5.0), Flux Simulator (1.2.1), RSEM (1.2.31), Kallisto (0.43.0), rnaSPAdes (3.11.1), Salmon (0.8.2), Trans-ABySS (1.5.5), TransRate (1.0.3), Trinity (2.4.0)
+
  ## Manual
  - Run QuantEval individually:
  ```shell
- ./scripts/QuantEval.py --reference --contig --match --input input.json
+ python3 ./scripts/QuantEval.py --reference --contig --match --input input.json
  ```
  the first three parameters (<b>--reference, --contig, --match</b>) indicate which mode to run (the three mode can be run independantly, but one has to run both reference mode and contig mode <b>before</b> running match mode, it is recommended to run three mode together) and the <b>input.json</b> file specify the input parameters for the QuantEval main program. Because the main program of QuantEval <b>does not</b> include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to run quantification algorithms (i.e. RSEM/Kallisto/Salmon), sequence alignment (BLASTn) and contig evaluation (Transrate) by themself in order to get similar analysis result in the reference research.
  - Run pairwise BLASTn for reference/contig mode:
@@ -76,7 +86,8 @@
  ```
 - Run example:
 ```
-./scripts/QuantEval.py --reference --contig --match --input ./example/input.json
+cd example
+python3 ../scripts/QuantEval.py --reference --contig --match --input ./example.json
 ```
 One can also import the functions in utilities.py to built their own analysis pipeline.
 - Construct connected component for reference only:

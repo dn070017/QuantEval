@@ -2,6 +2,7 @@ library('gridExtra')
 library('grid')
 library('stats')
 library('tidyverse')
+library('ggplot2')
 
 aggregate_column <- function(X, target, on_which_column, new_name, fun){
     X$target <- X[, target]
