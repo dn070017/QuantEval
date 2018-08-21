@@ -1,8 +1,8 @@
  # QuantEval
  ## About
- QuantEval is an analsis pipeline which evaluate the reliability of quantification tools. There are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode built relations between contigs and reference transcripts.
+ QuantEval is an analysis pipeline which evaluate the reliability of quantification tools. There are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode built relations between contigs and reference transcripts.
  ## Reference
- > Ping-Han Hsieh, Yen-Jen Oyang and Chien-Yu Chen. Effect of de novo transcriptome assembly on quality of read mapping and transcript quantification. 2018, bioRxiv 380998.
+ > Ping-Han Hsieh, Yen-Jen Oyang and Chien-Yu Chen. Effect of de novo transcriptome assembly on transcript quantification. 2018, bioRxiv 380998.
  ## Manual
  - Run QuantEval individually:
  ```shell
@@ -117,6 +117,7 @@ print(ref_uf.parent)
 ```
 - Output format
 
+<<<<<<< HEAD
 | column | description |
 |--------|-------------|
 | match_name | alignment (ref.contig.strand) |
@@ -141,3 +142,6 @@ print(ref_uf.parent)
 | ref_gene_tot_xprs_***tpm/count***\_***quantifier*** | total ***TPM/count*** of ref in the same gene |
 | length_difference | the difference of length between contig and reference |
 | xprs_***tpm/count***\_error_***quantifier*** | quantificaion error for the estimated abundance of contig | 
+=======
+Because the main program of QuantEval does not include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to use the same parameters in the modules located in pipelines (assembly.sh, quantification.sh, postprocessing.sh) and run quantification algorithms (i.e. RSEM/Kallisto/Salmon) and sequence alignment (BLASTn) and contig evaluation (Transrate) by themself in order to get similar analysis result in the reference research.
+>>>>>>> 45b58696ae0495a97d993825c2ae9f532329b55e
