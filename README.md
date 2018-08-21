@@ -21,10 +21,11 @@
  The first three parameters (<b>--reference, --contig, --match</b>) indicate which mode to run and the <b>input.json</b> file specifies the input parameters for the QuantEval main program. The three modes can be run independantly, but one has to run both reference mode and contig mode <b>before</b> running the match mode. It is recommended to run three modes in sequential. Because the main program of QuantEval <b>does not</b> include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to run quantification algorithms (i.e. RSEM/Kallisto/Salmon), sequence alignment (BLASTn) and contig evaluation (Transrate) by themselves in order to get similar analysis results in the reference research. 
  
  Below, we use an example dataset to explain how to use QuantEval. This example contains the following files:
- -- ref.fasta # the reference transcripts (In real applications, you will not have this file for speices without reference transcripts)
- -- contig.fasta # the contigs assembled by short reads, e.g. read_1.fastq and read_2.fastq
- -- read_1.fastq read_2.fastq
+ - ref.fasta # the reference transcripts (In real applications, you will not have this file for speices without reference transcripts)
+ - contig.fasta # the contigs assembled by short reads, e.g. read_1.fastq and read_2.fastq
+ - read_1.fastq read_2.fastq
 
+ Before running QuantEval,
  - Run pairwise BLASTn for reference/contig mode:
  ```shell
  # reference mode
