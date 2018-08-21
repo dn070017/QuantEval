@@ -18,7 +18,7 @@
  ```shell
  python3 ./scripts/QuantEval.py --reference --contig --match --input input.json
  ```
- the first three parameters (<b>--reference, --contig, --match</b>) indicate which mode to run (the three mode can be run independantly, but one has to run both reference mode and contig mode <b>before</b> running match mode, it is recommended to run three mode together) and the <b>input.json</b> file specify the input parameters for the QuantEval main program. Because the main program of QuantEval <b>does not</b> include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to run quantification algorithms (i.e. RSEM/Kallisto/Salmon), sequence alignment (BLASTn) and contig evaluation (Transrate) by themself in order to get similar analysis result in the reference research.
+ The first three parameters (<b>--reference, --contig, --match</b>) indicate which mode to run and the <b>input.json</b> file specifies the input parameters for the QuantEval main program. The three modes can be run independantly, but one has to run both reference mode and contig mode <b>before</b> running the match mode. It is recommended to run three modes in sequential. Because the main program of QuantEval <b>does not</b> include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to run quantification algorithms (i.e. RSEM/Kallisto/Salmon), sequence alignment (BLASTn) and contig evaluation (Transrate) by themselves in order to get similar analysis results in the reference research.
  - Run pairwise BLASTn for reference/contig mode:
  ```shell
  # reference mode
