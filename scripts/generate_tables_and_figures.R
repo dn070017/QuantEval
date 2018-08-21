@@ -729,7 +729,7 @@ cat('- stage', stage, 'generate manuscript figure duplication error plot\n')
 {
     error_index <- 1
     figure_list <- list()
-    for(category in c('Best Alignment Score', 'Highest Estimation', 'Total Expression')){
+    for(category in c('Best Alignment Score', 'Highest RPEA', 'Total Expression')){
         match <- fetch_data(match_dataset, 'Experimental', 'Mouse', 'rnaSPAdes')
         match <- categorize_match(match, 'duplication')
         
@@ -743,7 +743,7 @@ cat('- stage', stage, 'generate manuscript figure duplication error plot\n')
         
         if(category == 'Best Alignment Score'){
             X <- best_hit_filter(X, 'alignment_score', on='ref_name', func=max)
-        } else if (category == 'Highest Estimation'){
+        } else if (category == 'Highest RPEA'){
             X <- best_hit_filter(X, xprs_contribute, on='ref_name', func=max)
         } else {
             X <- subset(X, X[, xprs] == X[, 'contig_component_max_xprs_tpm_kallisto'])
@@ -751,7 +751,7 @@ cat('- stage', stage, 'generate manuscript figure duplication error plot\n')
             X[, xprs_error] <- (X[, xprs] - X[, answer]) / (X[, xprs] + X[, answer]) * 100 
             X[is.na(X[, xprs_error]), xprs_error] <- 0 
         }
-        figure_list[[error_index]] <- return_boxplot(X, 'max_contribute', xprs_error, 'assembly', pdf_font=T, group_color=T, cut=T, breaks=seq(0, 1, by=0.05), x_label='Proportion of Maximum Estimated Abundance', y_label='Relative Error (%)', show_guide=F, title=category)
+        figure_list[[error_index]] <- return_boxplot(X, 'max_contribute', xprs_error, 'assembly', pdf_font=T, group_color=T, cut=T, breaks=seq(0, 1, by=0.05), x_label='Maximum RPEA of Connected Component', y_label='Relative Error (%)', show_guide=F, title=category)
         error_index <- error_index + 1
     }
         
