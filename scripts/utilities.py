@@ -40,16 +40,18 @@ def process_and_validate_argument(args):
                 if args.reference:
                     if 'ref_read_pickle' in input_file:
                         if 'ref_write_pickle' in input_file:
-                            sys.stderr.write(Fore.RED + '[WARNING]')
-                            sys.stderr.write(Style.RESET_ALL + ' ignore ref_write_pickle while ref_read_pickle is set\n')
+                            pass
+                            #sys.stderr.write(Fore.RED + '[WARNING]')
+                            #sys.stderr.write(Style.RESET_ALL + ' ignore ref_write_pickle while ref_read_pickle is set\n')
                     else:
                         required_file.extend(['ref_fasta', 'ref_blastn', 'ref_xprs_file'])
                    
                 if args.contig:
                     if 'contig_read_pickle' in input_file:
                         if 'contig_write_pickle' in input_file:
-                            sys.stderr.write(Fore.RED + '[WARNING]')
-                            sys.stderr.write(Style.RESET_ALL + ' ignore contig_write_pickle while contig_read_pickle is set\n')
+                            pass
+                            #sys.stderr.write(Fore.RED + '[WARNING]')
+                            #sys.stderr.write(Style.RESET_ALL + ' ignore contig_write_pickle while contig_read_pickle is set\n')
                     else:
                         required_file.extend(['contig_fasta', 'contig_blastn', 'contig_xprs_file'])
                 
@@ -115,6 +117,10 @@ def process_and_validate_argument(args):
                     if os.path.exists(file):
                         input_file[var] = os.path.abspath(file)
                     else:
+                        if var == 'ref_read_pickle' and input_file['ref_write_pickle'] and input_file['ref_read_pickle']:
+                            continue
+                        if var == 'contig_read_pickle' and input_file['contig_write_pickle'] and input_file['contig_read_pickle']:
+                            continue
                         sys.stderr.write(Fore.RED + '[ERROR] ' + file + Style.RESET_ALL + ' does not exist\n') 
                         terminate = True     
     else:
