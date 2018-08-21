@@ -117,7 +117,6 @@ print(ref_uf.parent)
 ```
 - Output format
 
-<<<<<<< HEAD
 | column | description |
 |--------|-------------|
 | match_name | alignment (ref.contig.strand) |
@@ -142,6 +141,3 @@ print(ref_uf.parent)
 | ref_gene_tot_xprs_***tpm/count***\_***quantifier*** | total ***TPM/count*** of ref in the same gene |
 | length_difference | the difference of length between contig and reference |
 | xprs_***tpm/count***\_error_***quantifier*** | quantificaion error for the estimated abundance of contig | 
-=======
-Because the main program of QuantEval does not include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to use the same parameters in the modules located in pipelines (assembly.sh, quantification.sh, postprocessing.sh) and run quantification algorithms (i.e. RSEM/Kallisto/Salmon) and sequence alignment (BLASTn) and contig evaluation (Transrate) by themself in order to get similar analysis result in the reference research.
->>>>>>> 45b58696ae0495a97d993825c2ae9f532329b55e
