@@ -1,6 +1,6 @@
  # QuantEval
  ## About
- QuantEval is an analysis pipeline which evaluate the reliability of quantification tools. There are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode built relations between contigs and reference transcripts.
+ QuantEval was released for two purposes: 1. a user can use the scripts in QuantEval to reproduce all the analyses in the following study (Hsieh et al.); 2. a user can follow the example in QuantEval to conduct the same analyses on his own study. For the first purpose, there are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode builds relations between contigs and reference transcripts. For the second purpose, the users are encouraged to follow the provided example to conduct new analyses on his own data.
  ## Reference
  > Ping-Han Hsieh, Yen-Jen Oyang and Chien-Yu Chen. Effect of de novo transcriptome assembly on transcript quantification. 2018, bioRxiv 380998.
  ## Requirement
@@ -18,9 +18,15 @@
  ```shell
  python3 ./scripts/QuantEval.py --reference --contig --match --input input.json
  ```
- the first three parameters (<b>--reference, --contig, --match</b>) indicate which mode to run (the three mode can be run independantly, but one has to run both reference mode and contig mode <b>before</b> running match mode, it is recommended to run three mode together) and the <b>input.json</b> file specify the input parameters for the QuantEval main program. Because the main program of QuantEval <b>does not</b> include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to run quantification algorithms (i.e. RSEM/Kallisto/Salmon), sequence alignment (BLASTn) and contig evaluation (Transrate) by themself in order to get similar analysis result in the reference research.
+ The first three parameters (<b>--reference, --contig, --match</b>) indicate which mode to run and the <b>input.json</b> file specifies the input parameters for the QuantEval main program. The three modes can be run independantly, but one has to run both reference mode and contig mode <b>before</b> running the match mode. It is recommended to run three modes in sequential. Because the main program of QuantEval <b>does not</b> include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to run quantification algorithms (i.e. RSEM/Kallisto/Salmon), sequence alignment (BLASTn) and contig evaluation (Transrate) by themselves in order to get similar analysis results in the reference research. 
  ___
 
+ Below, we use an example dataset to explain how to use QuantEval. This example contains the following files:
+ - ref.fasta: the reference transcripts (In real applications, you will not have this file for the speices without reference transcripts)
+ - contig.fasta: the contigs assembled by short reads, e.g. read_1.fastq and read_2.fastq
+ - read_1.fastq read_2.fastq
+
+ Before running QuantEval,
  - Run pairwise BLASTn for reference/contig mode:
  ```shell
  # reference mode
