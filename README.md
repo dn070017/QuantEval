@@ -160,4 +160,4 @@ ___
 | ref_gene_tot_xprs_***tpm/count***\_***quantifier*** | total ***TPM/count*** of ref in the same gene |
 | length_difference | the difference of length between contig and reference |
 | xprs_***tpm/count***\_error_***quantifier*** | quantificaion error for the estimated abundance of contig | 
-> Note that the content of output will be different depends on reference/contig/match mode, but one can find all the description on the table above.
+> Note that this is the superset of the output fields (the match mode). The content of output will be different depends on reference/contig/match mode (e.g. one can only find the columns start with ***contig*** from contig mode), but one can find all the description on the table above.
