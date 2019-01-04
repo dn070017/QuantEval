@@ -1,14 +1,32 @@
  # QuantEval
  ## About
- QuantEval is an analysis pipeline which evaluate the reliability of quantification tools. There are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode built relations between contigs and reference transcripts.
+ QuantEval was released for two purposes: 1. a user can use the scripts in QuantEval to reproduce all the analyses in the following study (Hsieh et al.); 2. a user can follow the example in QuantEval to conduct the same analyses on his own study. For the first purpose, there are three modes in the QuantEval main program. (1) <b>Reference Mode</b>, (2) <b>Contig Mode</b> and (3) <b>Match Mode</b>. The first two modes read the quantification results and build a ambiguity cluster based on connected components for the reference transcripts and contig sequences. The match mode builds relations between contigs and reference transcripts. For the second purpose, the users are encouraged to follow the provided example to conduct new analyses on his own data.
  ## Reference
  > Ping-Han Hsieh, Yen-Jen Oyang and Chien-Yu Chen. Effect of de novo transcriptome assembly on transcript quantification. 2018, bioRxiv 380998.
+ ## Requirement
+ - QuantEval main program:
+    - Python3 (3.5.2)
+    - Python packages: pandas (0.20.3), numpy (1.12.1)
+ - Generate figures and table:
+    - R (3.3.0)
+    - R pacakges: gridExtra, grid, stats, tidyverse, plyr, ggplot2, reshape2
+ - Utilities:
+    - Bowtie2 (2.3.0), BLASTn (2.5.0), Flux Simulator (1.2.1), RSEM (1.2.31), Kallisto (0.43.0), rnaSPAdes (3.11.1), Salmon (0.8.2), Trans-ABySS (1.5.5), TransRate (1.0.3), Trinity (2.4.0)
+
  ## Manual
  - Run QuantEval individually:
  ```shell
- ./scripts/QuantEval.py --reference --contig --match --input input.json
+ python3 ./scripts/QuantEval.py --reference --contig --match --input input.json
  ```
- the first three parameters (<b>--reference, --contig, --match</b>) indicate which mode to run (the three mode can be run independantly, but one has to run both reference mode and contig mode <b>before</b> running match mode, it is recommended to run three mode together) and the <b>input.json</b> file specify the input parameters for the QuantEval main program. Because the main program of QuantEval <b>does not</b> include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to run quantification algorithms (i.e. RSEM/Kallisto/Salmon), sequence alignment (BLASTn) and contig evaluation (Transrate) by themself in order to get similar analysis result in the reference research.
+ The first three parameters (<b>--reference, --contig, --match</b>) indicate which mode to run and the <b>input.json</b> file specifies the input parameters for the QuantEval main program. The three modes can be run independantly, but one has to run both reference mode and contig mode <b>before</b> running the match mode. It is recommended to run three modes in sequential. Because the main program of QuantEval <b>does not</b> include a wrapper for quantification/sequence alignment/contig evaluation, which are essesntial steps for QuantEval main program, one might need to run quantification algorithms (i.e. RSEM/Kallisto/Salmon), sequence alignment (BLASTn) and contig evaluation (Transrate) by themselves in order to get similar analysis results in the reference research. 
+ ___
+
+ Below, we use an example dataset to explain how to use QuantEval. This example contains the following files:
+ - ref.fasta: the reference transcripts (In real applications, you will not have this file for the speices without reference transcripts)
+ - contig.fasta: the contigs assembled by short reads, e.g. read_1.fastq and read_2.fastq
+ - read_1.fastq read_2.fastq
+
+ Before running QuantEval,
  - Run pairwise BLASTn for reference/contig mode:
  ```shell
  # reference mode
@@ -73,11 +91,16 @@
     "match_blastn": "./blastn/contig_to_ref.tsv",
     "output_dir": "./QuantEval/"
 }
- ```
+```
+___
+ 
 - Run example:
 ```
-./scripts/QuantEval.py --reference --contig --match --input ./example/input.json
+cd example
+python3 ../scripts/QuantEval.py --reference --contig --match --input ./example.json
 ```
+___
+
 One can also import the functions in utilities.py to built their own analysis pipeline.
 - Construct connected component for reference only:
 ```python
@@ -103,10 +126,14 @@ ref_uf, ref_component_dict = construct_graph(ref_seq_dict, ref_self_match_dict)
 print(ref_uf.component_label)
 print(ref_uf.parent)
 ```
+___
+ 
 - Run all the analysis in the study (<b>time consuming</b>):
 ```shell
 ./pipelines/run_analysis.sh
 ```
+___
+ 
 - Output format
 
 | column | description |
@@ -133,3 +160,4 @@ print(ref_uf.parent)
 | ref_gene_tot_xprs_***tpm/count***\_***quantifier*** | total ***TPM/count*** of ref in the same gene |
 | length_difference | the difference of length between contig and reference |
 | xprs_***tpm/count***\_error_***quantifier*** | quantificaion error for the estimated abundance of contig | 
+> Note that this is the superset of the output fields (the match mode). The content of output will be different depends on reference/contig/match mode (e.g. one can only find the columns start with ***contig*** from contig mode), but one can find all the description on the table above.

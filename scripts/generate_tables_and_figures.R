@@ -2,8 +2,7 @@ library('plyr')
 library('ggplot2')
 library('reshape2')
 
-source('/Users/Hsieh/Google 雲端硬碟/utilities.R')
-#source('utilities.R')
+source('./utilities.R')
 
 cat('- setup parameters\n')
 {
