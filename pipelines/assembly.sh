@@ -7,11 +7,11 @@ THREADS=32
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASEDIR="$SCRIPTDIR/../"
 
-for TYPE in 'real' 'simulation'
+for TYPE in 'real_low' 'real_high' 'simulation_low' 'simulation_high'
 do
     for SPECIES in 'yeast' 'dog' 'mouse'
     do
-        if [ $TYPE != 'simulation' ] && [ $SPECIES == 'mouse' ]
+        if [ $TYPE != 'simulation_low' ] && [ $TYPE != 'simulation_high' ] && [ $SPECIES == 'mouse' ]
         then
             SS_RNASPADES="--ss-rf"
             SS_TRANSABYSS="--SS"
@@ -26,8 +26,8 @@ do
         MRNADIR=$BASEDIR/$TYPE/$SPECIES/mRNA
         READDIR=$BASEDIR/$TYPE/$SPECIES/reads
             
-        FLMEAN="$(grep 'insert size average:' $MRNADIR/bwa/stats.txt | grep -oP '(\d+\.*\d+)')"
-        FLSD="$(grep 'insert size standard deviation:' $MRNADIR/bwa/stats.txt | grep -oP '(\d+\.*\d+)')"
+        #FLMEAN="$(grep 'insert size average:' $MRNADIR/bwa/stats.txt | grep -oP '(\d+\.*\d+)')"
+        #FLSD="$(grep 'insert size standard deviation:' $MRNADIR/bwa/stats.txt | grep -oP '(\d+\.*\d+)')"
             
         mkdir -p $DATADIR/rnaspades/rnaspades
         rnaspades.py -t $THREADS -m $MEMORY $SS_RNASPADES -1 $READDIR/read_1.fastq -2 $READDIR/read_2.fastq -o $DATADIR/rnaspades/rnaspades > $DATADIR/rnaspades/rnaspades/rnaspades.out 2> $DATADIR/rnaspades/rnaspades/rnaspades.err 

@@ -9,11 +9,12 @@ EVALUE="1e-5"
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASEDIR="$SCRIPTDIR/../"
 
-for TYPE in 'real' 'simulation'
+for TYPE in 'real_low' 'real_high' 'simulation_low' 'simulation_high'
 do
     for SPECIES in 'yeast' 'dog' 'mouse'
     do
-        for SEQ in 'mRNA' 'rnaspades' 'trinity' 'transabyss'
+        #for SEQ in 'mRNA' 'rnaspades' 'trinity' 'transabyss'
+        for SEQ in 'rnaspades' 'trinity' 'transabyss'
         do
             SEQDIR=$BASEDIR/$TYPE/$SPECIES/$SEQ
             MRNADIR=$BASEDIR/$TYPE/$SPECIES/mRNA

@@ -6,11 +6,11 @@ THREADS=32
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASEDIR="$SCRIPTDIR/../"
 
-for TYPE in 'real' 'simulation'
+for TYPE in 'real_low' 'real_high' 'simulation_low' 'simulation_high'
 do
     for SPECIES in 'yeast' 'dog' 'mouse'
     do
-        if [ $TYPE != 'simulation' ] && [ $SPECIES == 'mouse' ]
+        if [ $TYPE != 'simulation_low' ] && [ $TYPE != 'simulation_high'] && [ $SPECIES == 'mouse' ]
         then
             SS_KALLISTO="--rf-stranded"
             SS_RSEM="reverse"
@@ -27,8 +27,8 @@ do
             MRNADIR=$BASEDIR/$TYPE/$SPECIES/mRNA
             READDIR=$BASEDIR/$TYPE/$SPECIES/reads
            
-            FLMEAN="$(grep 'insert size average:' $MRNADIR/bwa/stats.txt | grep -oP '(\d+\.*\d+)')"
-            FLSD="$(grep 'insert size standard deviation:' $MRNADIR/bwa/stats.txt | grep -oP '(\d+\.*\d+)')"
+            #FLMEAN="$(grep 'insert size average:' $MRNADIR/bwa/stats.txt | grep -oP '(\d+\.*\d+)')"
+            #FLSD="$(grep 'insert size standard deviation:' $MRNADIR/bwa/stats.txt | grep -oP '(\d+\.*\d+)')"
             
             mkdir -p $SEQDIR/kallisto
             kallisto index -i $SEQDIR/kallisto/kallisto.index -k 31 $SEQDIR/${SEQ}.fasta
@@ -52,7 +52,7 @@ do
             mkdir -p $SEQDIR/corset
             corset -p $SEQDIR/corset/corset $SEQDIR/bowtie2/bowtie2.bam > $SEQDIR/corset/corset.out 2> $SEQDIR/corset/corset.err
 
-            if [ $SEQ == 'mRNA' ] && [ $TYPE == 'real' ]
+            if [ $SEQ == 'mRNA' ] && [ $TYPE == 'real_low' ] || [ $TYPE == 'real_high' ]
             then
                 mkdir -p $SEQDIR/answer
                 $BASEDIR/scripts/generate_answer_xprs.py $TYPE $SEQDIR/kallisto/abundance.tsv $SEQDIR/rsem/rsem.isoforms.results $SEQDIR/salmon/quant.sf $SEQDIR/answer/answer_xprs.tsv

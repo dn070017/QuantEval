@@ -5,7 +5,7 @@ set -e
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$SCRIPTDIR/../reference"
 BASEDIR="$SCRIPTDIR/../reference"
-REALDIR="$SCRIPTDIR/../real/"
+REALDIR="$SCRIPTDIR/../real_low/"
 
 mkdir -p "$BASEDIR/dog/"
 cd "$BASEDIR/dog/"
@@ -46,4 +46,24 @@ fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR453566
 ln SRR453566_1.fastq raw_r1.fastq
 ln SRR453566_2.fastq raw_r2.fastq
 
+REALDIR="$SCRIPTDIR/../real_high/"
 
+mkdir -p "$REALDIR/yeast/reads"
+cd "$REALDIR/yeast/reads"
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR453566
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR453567
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR453568
+cat SRR453566_1.fastq SRR453567_1.fastq SRR453568_1.fastq raw_r1.fastq 
+cat SRR453566_2.fastq SRR453567_2.fastq SRR453568_2.fastq raw_r2.fastq 
+
+mkdir -p "$REALDIR/dog/reads"
+cd "$REALDIR/dog/reads"
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR882105
+ln SRR882105_1.fastq raw_r1.fastq
+ln SRR882105_2.fastq raw_r2.fastq
+
+mkdir -p "$REALDIR/mouse/reads"
+cd "$REALDIR/mouse/reads"
+fastq-dump --defline-seq '@$sn[_$rn]/$ri' --split-files SRR203276
+ln SRR203276_1.fastq raw_r1.fastq
+ln SRR203276_2.fastq raw_r2.fastq

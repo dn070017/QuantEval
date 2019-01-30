@@ -5,7 +5,7 @@ set -e
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASEDIR="$SCRIPTDIR/../"
 
-for TYPE in 'real' 'simulation'
+for TYPE in 'real_low' 'real_high' 'simulation_low' 'simulation_high'
 do 
     for SPECIES in 'yeast' 'dog' 'mouse'
     do
