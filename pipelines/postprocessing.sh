@@ -9,7 +9,7 @@ EVALUE="1e-5"
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASEDIR="$SCRIPTDIR/../"
 
-for TYPE in 'real_low' 'real_high' 'simulation_low' 'simulation_high'
+for TYPE in 'real_low' 'real_high' 'simulation_50x' 'simulation_50M'
 do
     for SPECIES in 'yeast' 'dog' 'mouse'
     do

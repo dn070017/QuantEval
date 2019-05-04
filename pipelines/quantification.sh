@@ -6,11 +6,11 @@ THREADS=32
 SCRIPTDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASEDIR="$SCRIPTDIR/../"
 
-for TYPE in 'real_low' 'real_high' 'simulation_low' 'simulation_high'
+for TYPE in 'real_low' 'real_high' 'simulation_50x' 'simulation_50M'
 do
     for SPECIES in 'yeast' 'dog' 'mouse'
     do
-        if [ $TYPE != 'simulation_low' ] && [ $TYPE != 'simulation_high'] && [ $SPECIES == 'mouse' ]
+        if [ $TYPE != 'simulation_50x' ] && [ $TYPE != 'simulation_50M'] && [ $SPECIES == 'mouse' ]
         then
             SS_KALLISTO="--rf-stranded"
             SS_RSEM="reverse"
