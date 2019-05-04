@@ -150,7 +150,7 @@ grid_arrange_shared_legend <- function(..., ncol=length(list(...)), nrow = 1, po
 return_boxplot <- function(X, x, y, color, pdf_font=F, group_color=F, cut=T, breaks=seq(-100, 100, by=10), max_range=c(-100, 100), guide_name='Categories', show_guide=T, x_label='', y_label='', title='', subtitle=''){
     X$x <- X[, x]
     X$y <- X[, y]
-    X$color <- factor(X[, color])
+    X$color <- X[, color]
     
     if(cut==T){
         X$group <- cut(X$x, breaks=breaks, include.lowest=T, right=F)
@@ -159,7 +159,7 @@ return_boxplot <- function(X, x, y, color, pdf_font=F, group_color=F, cut=T, bre
         levels(X$group) <- breaks
     } else {
         X$group <- factor(X$x)
-        X$color <- factor(X$color)
+        #X$color <- factor(X$color)
     }
 
     colors <- colorRampPalette(c("#0091ff", "#f0650e"))(length(levels(X$color)))
@@ -181,7 +181,8 @@ return_boxplot <- function(X, x, y, color, pdf_font=F, group_color=F, cut=T, bre
     figure <- ggplot(X, aes(x=group, y=y, fill=color, color=color)) + xlab(x_label) + ylab(y_label) +
               geom_hline(color='lightpink', yintercept=0, linetype=2) + geom_boxplot(notch=FALSE, outlier.shape=16, outlier.alpha=0.5, alpha=0.5, outlier.size=outlier_size, lwd=lwd) +
               scale_color_manual(values=colors, guide=F) +
-              labs(title=title, subtitle=subtitle) + guides(fill=guides(title.position='top', title.hjust=0.5))+
+              labs(title=title, subtitle=subtitle) + 
+              guides(fill=guides(title.position='top', title.hjust=0.5)) +
               theme(axis.line=element_line(colour='black'), panel.grid.major=element_blank(),
                     panel.border=element_blank(), panel.background=element_blank(),
                     axis.text.x=element_text(angle = 45, hjust = 1)) +
